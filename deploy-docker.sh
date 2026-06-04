@@ -38,7 +38,7 @@ if [ ! -f .env ]; then
   cat > .env << EOF
 DB_PASS=$(openssl rand -hex 16)
 JWT_SECRET=$(openssl rand -hex 32)
-FRONTEND_URL=https://${DOMAIN}
+FRONTEND_URL=http://${DOMAIN}:8080
 EOF
   log ".env created — LƯU LẠI THÔNG TIN NÀY!"
   cat .env
@@ -52,7 +52,7 @@ npm install --silent 2>/dev/null || true
 
 # Đọc FRONTEND_URL từ .env
 source ../.env
-VITE_API_BASE_URL=https://${DOMAIN}/api npm run build > /dev/null 2>&1
+VITE_API_BASE_URL=http://${DOMAIN}:8080/api npm run build > /dev/null 2>&1
 cd ..
 log "Frontend built → frontend/dist/"
 
@@ -66,12 +66,12 @@ log "Waiting for services..."
 sleep 5
 
 # Check API health
-if curl -sf http://127.0.0.1:3080/api/health > /dev/null 2>&1; then
+if curl -sf http://127.0.0.1:8080/api/health > /dev/null 2>&1; then
   log "API healthy ✓"
 else
   warn "API chưa sẵn sàng, đợi thêm 10s..."
   sleep 10
-  curl -sf http://127.0.0.1:3080/api/health && log "API healthy ✓" || warn "Kiểm tra logs: docker compose logs api"
+  curl -sf http://127.0.0.1:8080/api/health && log "API healthy ✓" || warn "Kiểm tra logs: docker compose logs api"
 fi
 
 # ─── 6. Tạo admin account ────────────────────────────────────────────────────
@@ -87,30 +87,14 @@ echo ""
 echo "  Containers:"
 echo "    xmd-db   → PostgreSQL (127.0.0.1:5433)"
 echo "    xmd-api  → Backend    (127.0.0.1:5050)"
-echo "    xmd-web  → Frontend   (127.0.0.1:3080)"
+echo "    xmd-web  → Frontend   (port 8080)"
 echo ""
-echo "  ─── BƯỚC TIẾP THEO ───"
+echo "  ─── TRUY CẬP ───"
 echo ""
-echo "  Thêm vhost vào Nginx HOST (hoặc aaPanel):"
+echo "  URL: http://${DOMAIN}:8080"
 echo ""
-echo "  server {"
-echo "      listen 80;"
-echo "      server_name ${DOMAIN};"
-echo ""
-echo "      location / {"
-echo "          proxy_pass http://127.0.0.1:3080;"
-echo "          proxy_set_header Host \$host;"
-echo "          proxy_set_header X-Real-IP \$remote_addr;"
-echo "          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
-echo "          proxy_set_header X-Forwarded-Proto \$scheme;"
-echo "          client_max_body_size 5M;"
-echo "      }"
-echo "  }"
-echo ""
-echo "  Sau đó cài SSL:"
-echo "    sudo certbot --nginx -d ${DOMAIN}"
-echo ""
-echo "  Hoặc nếu dùng aaPanel:"
-echo "    Website → Add → Reverse Proxy → http://127.0.0.1:3080"
+echo "  Nếu không truy cập được, mở port 8080 trên firewall:"
+echo "    sudo ufw allow 8080/tcp"
+echo "    # Hoặc trên aaPanel: Security → Firewall → Add Rule → 8080"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

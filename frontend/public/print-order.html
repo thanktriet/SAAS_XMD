@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phiếu bán hàng</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      color: #111;
+      background: #e8e8e8;
+      line-height: 1.35;
+    }
+
+    /* ── Trang A4 — screen preview ────────────────────────────────── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;        /* cảnh báo nếu tràn khi xem screen */
+      margin: 12px auto;
+      background: #fff;
+      padding: 8mm 10mm 6mm 10mm;
+      box-shadow: 0 2px 16px rgba(0,0,0,.18);
+      overflow: hidden;
+    }
+
+    /* ── Nút in ───────────────────────────────────────────────────── */
+    .print-toolbar {
+      width: 210mm;
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .btn { padding: 5px 16px; border-radius: 5px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-print { background: #1d4ed8; color: #fff; }
+    .btn-close  { background: #e5e7eb; color: #374151; }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 2px solid #1d4ed8;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+    .company-block { flex: 1; }
+    .company-name  { font-size: 13px; font-weight: 700; color: #1d4ed8; text-transform: uppercase; letter-spacing: .4px; }
+    .company-sub   { font-size: 9.5px; color: #555; margin-top: 1px; }
+    .doc-title-block { text-align: right; min-width: 160px; }
+    .doc-title  { font-size: 15px; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 1px; }
+    .doc-number { font-size: 11px; color: #1d4ed8; font-weight: 700; font-family: 'Courier New', monospace; margin-top: 1px; }
+    .doc-date   { font-size: 9.5px; color: #555; margin-top: 1px; }
+    .status-badge {
+      display: inline-block; padding: 1px 8px; border-radius: 20px;
+      font-size: 9.5px; font-weight: 700; margin-top: 2px; text-transform: uppercase;
+    }
+
+    /* ── Info boxes (2 cột) ───────────────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+    .info-box { border: 1px solid #c7d3e8; border-radius: 4px; overflow: hidden; }
+    .info-box-title {
+      background: #1d4ed8; color: #fff; font-size: 9px; font-weight: 700;
+      padding: 2px 7px; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .info-box-body { padding: 4px 7px; }
+    .info-row { display: flex; font-size: 10px; padding: 1px 0; gap: 4px; }
+    .info-label { color: #555; min-width: 80px; flex-shrink: 0; }
+    .info-value { font-weight: 600; color: #111; flex: 1; word-break: break-word; }
+    .info-value.mono { font-family: 'Courier New', monospace; font-weight: 700; color: #1d4ed8; }
+
+    /* ── Section title ────────────────────────────────────────────── */
+    .section-title {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .4px; color: #374151; margin-bottom: 3px;
+      border-left: 3px solid #1d4ed8; padding-left: 5px;
+    }
+
+    /* ── Tables ───────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 10px; }
+    thead th {
+      background: #1e3a8a; color: #fff; padding: 3px 5px;
+      text-align: left; font-weight: 700; font-size: 9px;
+      text-transform: uppercase; letter-spacing: .2px; white-space: nowrap;
+    }
+    thead th.right  { text-align: right; }
+    thead th.center { text-align: center; }
+    tbody tr { border-bottom: 1px solid #eef1f7; }
+    tbody tr:nth-child(even) { background: #f7f9ff; }
+    tbody tr:last-child { border-bottom: 1.5px solid #c7d3e8; }
+    tbody td { padding: 3px 5px; vertical-align: middle; }
+    tbody td.right  { text-align: right; }
+    tbody td.center { text-align: center; }
+    .vin    { font-family: 'Courier New', monospace; font-size: 9px; color: #333; }
+    .dimmed { color: #888; font-size: 9.5px; }
+    .promo-row { background: #fefce8 !important; border-left: 2px solid #eab308; }
+    .promo-label { color: #854d0e; font-weight: 600; }
+
+    /* ── Tổng tiền ────────────────────────────────────────────────── */
+    .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 5px; }
+    .totals-table { width: 230px; font-size: 10px; }
+    .totals-table tr td { padding: 1.5px 0; }
+    .totals-table .t-label { color: #555; padding-right: 10px; }
+    .totals-table .t-value { text-align: right; font-weight: 600; }
+    .totals-table .t-value.red  { color: #b91c1c; }
+    .totals-table .t-value.blue { color: #1d4ed8; }
+    .total-final td {
+      border-top: 1.5px solid #1d4ed8; padding-top: 4px !important;
+      font-weight: 700; font-size: 12px;
+    }
+    .total-final .t-label { color: #111; }
+    .total-final .t-value { color: #1d4ed8; }
+
+    /* ── Lịch sử thanh toán ───────────────────────────────────────── */
+    .payment-history { margin-bottom: 5px; }
+    tfoot td {
+      font-weight: 700; padding: 3px 5px;
+      background: #f0f4ff; border-top: 1.5px solid #c7d3e8; font-size: 10px;
+    }
+    tfoot td.right { text-align: right; }
+
+    /* ── Công nợ ──────────────────────────────────────────────────── */
+    .debt-bar {
+      border: 1.5px solid #fca5a5; background: #fef2f2; border-radius: 4px;
+      padding: 4px 10px; display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 5px; font-size: 10.5px;
+    }
+    .debt-bar .debt-label  { color: #7f1d1d; font-weight: 600; }
+    .debt-bar .debt-amount { color: #b91c1c; font-size: 13px; font-weight: 700; }
+    .debt-bar.paid { border-color: #86efac; background: #f0fdf4; }
+    .debt-bar.paid .debt-label  { color: #14532d; }
+    .debt-bar.paid .debt-amount { color: #15803d; }
+
+    /* ── Ghi chú ──────────────────────────────────────────────────── */
+    .notes-box {
+      border: 1px dashed #c7d3e8; border-radius: 4px; padding: 3px 7px;
+      font-size: 10px; color: #374151; min-height: 18px; margin-bottom: 5px;
+    }
+    .notes-box.empty { color: #aaa; font-style: italic; }
+
+    /* ── Chữ ký ───────────────────────────────────────────────────── */
+    .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .sig-block { text-align: center; }
+    .sig-title { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #374151; margin-bottom: 22px; }
+    .sig-line  { border-top: 1px solid #888; margin: 0 8px; padding-top: 3px; font-size: 9.5px; color: #555; }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    .doc-footer {
+      border-top: 1px solid #c7d3e8; margin-top: 5px; padding-top: 3px;
+      font-size: 8.5px; color: #aaa; display: flex; justify-content: space-between;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       PRINT — override screen values, khóa cứng 1 tờ A4
+    ══════════════════════════════════════════════════════════════ */
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .print-toolbar { display: none !important; }
+      .page {
+        margin: 0; box-shadow: none; overflow: visible;
+        padding: 7mm 9mm 5mm 9mm;
+        width: 210mm; height: 297mm; max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Toolbar (ẩn khi in) ───────────────────────────────────────── -->
+<div class="print-toolbar">
+  <button class="btn btn-close" onclick="window.close()">✕ Đóng</button>
+  <button class="btn btn-print" onclick="window.print()">🖨️ In phiếu</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TRANG A4
+══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="header">
+    <div class="company-block">
+      <div class="company-name" id="companyName">—</div>
+      <div class="company-sub" id="companyAddress">—</div>
+      <div class="company-sub" id="companyPhone">—</div>
+    </div>
+    <div class="doc-title-block">
+      <div class="doc-title">Phiếu bán hàng</div>
+      <div class="doc-number" id="orderNumber">—</div>
+      <div class="doc-date" id="orderDate">—</div>
+      <div><span class="status-badge" id="statusBadge">—</span></div>
+    </div>
+  </div>
+
+  <!-- ── Khách hàng + Nhân viên ──────────────────────────────────── -->
+  <div class="two-col">
+    <div class="info-box">
+      <div class="info-box-title">👤 Thông tin khách hàng</div>
+      <div class="info-box-body" id="customerBlock">—</div>
+    </div>
+    <div class="info-box">
+      <div class="info-box-title">🏪 Thông tin giao dịch</div>
+      <div class="info-box-body" id="txnBlock">—</div>
+    </div>
+  </div>
+
+  <!-- ── Danh sách xe / sản phẩm ────────────────────────────────── -->
+  <div class="section-title">Danh sách xe / sản phẩm</div>
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th style="width:28px" class="center">#</th>
+        <th>Xe / Sản phẩm</th>
+        <th>Màu sắc</th>
+        <th>Số khung (VIN)</th>
+        <th>Số máy</th>
+        <th class="center" style="width:42px">SL</th>
+        <th class="right">Đơn giá</th>
+        <th class="right" style="width:46px">CK%</th>
+        <th class="right">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody id="itemsBody"></tbody>
+  </table>
+
+  <!-- ── Phụ kiện đi kèm ─────────────────────────────────────────── -->
+  <div id="accSection" style="display:none">
+    <div class="section-title">🔧 Phụ kiện đi kèm</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width:28px">#</th>
+          <th>Tên phụ kiện</th>
+          <th>Mã SKU</th>
+          <th class="center" style="width:42px">SL</th>
+          <th class="right">Đơn giá</th>
+          <th class="right">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody id="accBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── Phí & Dịch vụ ───────────────────────────────────────────── -->
+  <div id="feeSection" style="display:none">
+    <div class="section-title">📋 Phí &amp; Dịch vụ đăng ký</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width:28px">#</th>
+          <th>Nội dung</th>
+          <th style="width:90px">Loại</th>
+          <th class="right">Số tiền</th>
+        </tr>
+      </thead>
+      <tbody id="feeBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── Khuyến mãi ──────────────────────────────────────────────── -->
+  <div id="promoSection" style="display:none">
+    <div class="section-title">🎁 Chương trình khuyến mãi</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width:28px">#</th>
+          <th>Tên chương trình</th>
+          <th style="width:80px">Loại</th>
+          <th class="right">Ưu đãi</th>
+        </tr>
+      </thead>
+      <tbody id="promoBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── Tổng tiền ────────────────────────────────────────────────── -->
+  <div class="totals-wrap">
+    <table class="totals-table">
+      <tbody>
+        <tr id="subtotalVehicleRow" style="display:none">
+          <td class="t-label">Tiền xe:</td>
+          <td class="t-value" id="subtotalVehicle">—</td>
+        </tr>
+        <tr id="subtotalAccRow" style="display:none">
+          <td class="t-label">Phụ kiện:</td>
+          <td class="t-value" id="subtotalAcc">—</td>
+        </tr>
+        <tr id="subtotalFeeRow" style="display:none">
+          <td class="t-label">Phí &amp; Dịch vụ:</td>
+          <td class="t-value" id="subtotalFee">—</td>
+        </tr>
+        <tr>
+          <td class="t-label">Tạm tính:</td>
+          <td class="t-value" id="subtotal">—</td>
+        </tr>
+        <tr id="discountRow" style="display:none">
+          <td class="t-label">Giảm giá (KM):</td>
+          <td class="t-value red" id="discountAmt">—</td>
+        </tr>
+        <tr id="taxRow" style="display:none">
+          <td class="t-label">Thuế / Phí khác:</td>
+          <td class="t-value" id="taxAmt">—</td>
+        </tr>
+        <tr class="total-final">
+          <td class="t-label">TỔNG CỘNG:</td>
+          <td class="t-value blue" id="totalAmount">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Công nợ ──────────────────────────────────────────────────── -->
+  <div class="debt-bar" id="debtBar">
+    <span class="debt-label" id="debtLabel">—</span>
+    <span class="debt-amount" id="debtAmount">—</span>
+  </div>
+
+  <!-- ── Lịch sử thanh toán ──────────────────────────────────────── -->
+  <div class="payment-history">
+    <div class="section-title">Lịch sử thanh toán</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width:28px">#</th>
+          <th>Ngày</th>
+          <th>Hình thức</th>
+          <th>Số phiếu / Ref</th>
+          <th>Trạng thái</th>
+          <th class="right">Số tiền</th>
+        </tr>
+      </thead>
+      <tbody id="paymentBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5">Tổng đã thu (confirmed):</td>
+          <td class="right" id="totalPaid">—</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ── Ghi chú đơn hàng ─────────────────────────────────────────── -->
+  <div class="section-title">Ghi chú</div>
+  <div class="notes-box" id="notesBox"></div>
+
+  <!-- ── Chữ ký ──────────────────────────────────────────────────── -->
+  <div class="signatures">
+    <div class="sig-block">
+      <div class="sig-title">Nhân viên bán hàng</div>
+      <div class="sig-line" id="sigSales">—</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-title">Khách hàng</div>
+      <div class="sig-line" id="sigCustomer">—</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-title">Kế toán xác nhận</div>
+      <div class="sig-line">—</div>
+    </div>
+  </div>
+
+  <!-- ── Footer ──────────────────────────────────────────────────── -->
+  <div class="doc-footer">
+    <span id="footerLeft">—</span>
+    <span id="footerRight">In lúc: <span id="printTime">—</span></span>
+  </div>
+
+</div><!-- /.page -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     NGUỒN DỮ LIỆU
+     Ưu tiên 1: sessionStorage['print_order']  (từ nút In đơn trong app)
+     Ưu tiên 2: SAMPLE_ORDER                   (preview độc lập / dev)
+══════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Dữ liệu mẫu — dùng khi mở file trực tiếp mà không có sessionStorage ── */
+const SAMPLE_ORDER = {
+  order_number: "DH2026001",
+  created_at:   "2026-03-28T09:15:00",
+  status:       "deposit_paid",
+  notes:        "Khách yêu cầu giao xe trước 05/04/2026. Đã kiểm tra CCCD.",
+  customers: {
+    full_name: "Nguyễn Văn Minh", phone: "0901 234 567",
+    email: "minh.nguyen@gmail.com", address: "123 Lê Văn Việt, P. Tăng Nhơn Phú A, TP.HCM",
+    id_card: "012345678901", customer_code: "KH000042",
+  },
+  users: { full_name: "Trần Thị Hoa" },
+  company: {
+    name: "ĐẠI LÝ XE MÁY ĐIỆN ANH KHOA",
+    address: "456 Đường Số 9, P. Bình Hưng Hoà, Q. Bình Tân, TP.HCM",
+    phone: "028 3888 9999  |  Hotline: 0901 999 888",
+  },
+  sales_order_items: [
+    { vehicle_models: { brand: "VinFast", model_name: "Klara S" },
+      inventory_vehicles: { color: "Xanh Sapphire", vin: "VF9KLAASAP2026001", engine_number: "ENG-VF9-2026001" },
+      quantity: 1, unit_price: 28500000, discount_percent: 5, line_total: 27075000 },
+    { vehicle_models: { brand: "Pega", model_name: "eSmart2" },
+      inventory_vehicles: { color: "Trắng Ngọc Trai", vin: "PGESMARTW2026002", engine_number: "ENG-PG-2026002" },
+      quantity: 1, unit_price: 16990000, discount_percent: 0, line_total: 16990000 },
+  ],
+  sales_order_accessories: [
+    { accessories: { name: "Bình sạc nhanh 5A", code: "PKI-SC5A" }, quantity: 1, unit_price: 350000, line_total: 350000 },
+    { accessories: { name: "Túi treo xe",        code: "PKI-TUX1" }, quantity: 2, unit_price: 120000, line_total: 240000 },
+  ],
+  sales_order_fees: [
+    { fee_label: "Phí đăng ký biển số", amount: 1500000 },
+    { fee_label: "Phí trước bạ",        amount: 2200000 },
+  ],
+  sales_order_services: [
+    { service_name: "Dịch vụ bảo hiểm xe máy 1 năm", price: 660000 },
+  ],
+  sales_order_promotions: [
+    { promo_name: "Tặng mũ bảo hiểm chính hãng GRS", promo_type: "gift",  gift_item_name: "Mũ BH GRS A100", gift_quantity: 2, discount_amount: 0 },
+    { promo_name: "Giảm 500k thanh toán đủ",          promo_type: "fixed", gift_item_name: null,              gift_quantity: 0, discount_amount: 500000 },
+  ],
+  subtotal: 48525000, discount_amount: 500000, tax_amount: 0, total_amount: 48025000,
+  payments: [
+    { payment_date: "2026-03-28", payment_method: "cash",          receipt_number: "PT2026001",   status: "confirmed", amount: 10000000, confirmed_by_user: { full_name: "Lê Kế Toán" } },
+    { payment_date: "2026-03-30", payment_method: "qr_code",       receipt_number: "SEPAY-84521", status: "confirmed", amount: 5000000,  confirmed_by_user: null },
+    { payment_date: "2026-03-31", payment_method: "bank_transfer", receipt_number: null,           status: "pending",   amount: 8000000,  confirmed_by_user: null },
+  ],
+};
+
+/* ── Load từ sessionStorage nếu có, xoá ngay sau khi đọc ── */
+let ORDER;
+try {
+  const raw = sessionStorage.getItem('print_order');
+  if (raw) {
+    ORDER = JSON.parse(raw);
+    sessionStorage.removeItem('print_order');   // xoá ngay — không để lộ dữ liệu
+  } else {
+    ORDER = SAMPLE_ORDER;
+  }
+} catch (e) {
+  console.warn('Không đọc được print_order từ sessionStorage:', e);
+  ORDER = SAMPLE_ORDER;
+}
+
+/* ── Map field name API → field name render engine ── */
+/* API trả: users!salesperson_id → ORDER.users; render cần ORDER.sales_user */
+if (ORDER.users && !ORDER.sales_user) {
+  ORDER.sales_user = ORDER.users;
+}
+/* API trả: sales_order_promotions; render engine dùng order_promotions */
+if (ORDER.sales_order_promotions && !ORDER.order_promotions) {
+  ORDER.order_promotions = ORDER.sales_order_promotions;
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RENDER ENGINE
+══════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Helpers ────────────────────────────────────────────────────── */
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('vi-VN') + ' ₫';
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ir(label, value) {
+  if (!value && value !== 0) return '';
+  return `<div class="info-row">
+    <span class="info-label">${esc(label)}</span>
+    <span class="info-value">${esc(String(value))}</span>
+  </div>`;
+}
+function irMono(label, value) {
+  if (!value) return '';
+  return `<div class="info-row">
+    <span class="info-label">${esc(label)}</span>
+    <span class="info-value mono">${esc(String(value))}</span>
+  </div>`;
+}
+
+/* ── Status map ─────────────────────────────────────────────────── */
+const STATUS_MAP = {
+  draft:               { label: 'Nháp',             bg: '#e5e7eb', color: '#374151' },
+  confirmed:           { label: 'Đã xác nhận',      bg: '#dbeafe', color: '#1e40af' },
+  deposit_paid:        { label: 'Đã đặt cọc',       bg: '#fef9c3', color: '#854d0e' },
+  full_paid:           { label: 'Đã thanh toán đủ', bg: '#dcfce7', color: '#15803d' },
+  pdi_pending:         { label: 'Chờ PDI',           bg: '#f3e8ff', color: '#6b21a8' },
+  pdi_done:            { label: 'PDI hoàn tất',      bg: '#ede9fe', color: '#4c1d95' },
+  invoice_requested:   { label: 'Yêu cầu HĐ',       bg: '#e0f2fe', color: '#0369a1' },
+  invoice_approved:    { label: 'Đã duyệt HĐ',      bg: '#cffafe', color: '#0e7490' },
+  delivered:           { label: 'Đã giao xe',        bg: '#dcfce7', color: '#14532d' },
+  cancelled:           { label: 'Đã huỷ',            bg: '#fee2e2', color: '#991b1b' },
+};
+const PAY_METHOD = {
+  cash:          '💵 Tiền mặt',
+  bank_transfer: '🏦 Chuyển khoản',
+  qr_code:       '📱 QR SEPay',
+};
+const PAY_STATUS = {
+  confirmed: { label: '✅ Đã xác nhận', color: '#15803d' },
+  pending:   { label: '🟡 Chờ xác nhận', color: '#b45309' },
+  cancelled: { label: '❌ Đã huỷ',       color: '#b91c1c' },
+};
+
+/* ── Thông tin đại lý — cố định cho VinFast XMĐ Nam Thắng ── */
+const COMPANY_INFO = {
+  name:    'VinFast XMĐ Nam Thắng',
+  address: 'Số 22 Đường Phan Thị Ràng, Phường Rạch Giá, Tỉnh An Giang',
+  phone:   'Hotline: 0938 267 888',
+};
+
+/* ── Render ─────────────────────────────────────────────────────── */
+function render(o) {
+  /* Luôn dùng thông tin đại lý cố định, bỏ qua o.company nếu có */
+  const co = COMPANY_INFO;
+
+  /* Header */
+  document.getElementById('companyName').textContent    = co.name;
+  document.getElementById('companyAddress').textContent = 'Địa chỉ: ' + co.address;
+  document.getElementById('companyPhone').textContent   = co.phone;
+  document.getElementById('orderNumber').textContent    = o.order_number ?? '—';
+  document.getElementById('orderDate').textContent      = 'Ngày: ' + fmtDate(o.created_at);
+  document.getElementById('printTime').textContent      = new Date().toLocaleString('vi-VN');
+  document.getElementById('footerLeft').textContent     =
+    `${co.name ?? ''} — ${co.phone ?? ''}`;
+
+  /* Status badge */
+  const st = STATUS_MAP[o.status] ?? { label: o.status, bg: '#e5e7eb', color: '#374151' };
+  const badge = document.getElementById('statusBadge');
+  badge.textContent = st.label;
+  badge.style.background = st.bg;
+  badge.style.color      = st.color;
+
+  /* Khách hàng */
+  const cu = o.customers ?? {};
+  document.getElementById('customerBlock').innerHTML =
+    irMono('Mã KH:',      cu.customer_code) +
+    ir('Họ tên:',         cu.full_name)     +
+    ir('Điện thoại:',     cu.phone)         +
+    ir('Email:',          cu.email)         +
+    ir('CCCD:',           cu.id_card)       +
+    ir('Địa chỉ:',        cu.address);
+
+  /* Giao dịch */
+  document.getElementById('txnBlock').innerHTML =
+    irMono('Số đơn:',     o.order_number)                              +
+    ir('NVBH:',           o.sales_user?.full_name ?? '—')              +
+    ir('Ngày lập:',       fmtDate(o.created_at))                       +
+    ir('Trạng thái:',     st.label)                                    +
+    (o.delivery_date  ? ir('Ngày giao:', fmtDate(o.delivery_date))  : '') +
+    (o.pdi_notes      ? ir('Ghi chú PDI:', o.pdi_notes)             : '');
+
+  /* Items — xe */
+  const items = o.sales_order_items ?? [];
+  let itemsHtml = '';
+  let vehicleSubtotal = 0;
+  const orderKM = Number(o.discount_amount ?? 0);
+  items.forEach((item, i) => {
+    const brand  = item.vehicle_models?.brand ?? '';
+    const model  = item.vehicle_models?.model_name ?? '';
+    const color  = item.inventory_vehicles?.color         ?? '—';
+    const vin    = item.inventory_vehicles?.vin           ?? '—';
+    const engine = item.inventory_vehicles?.engine_number ?? '—';
+    const isFirst = i === 0;
+    const lineTotal = Number(item.line_total ?? 0);
+    const itemPct = Number(item.discount_percent ?? 0);
+    const showOrderKM = isFirst && orderKM > 0 && !(itemPct > 0);
+    const sauKM = Math.max(0, lineTotal - (showOrderKM ? orderKM : 0));
+    vehicleSubtotal += lineTotal;
+    const ckCol = itemPct > 0
+      ? itemPct + '%'
+      : (showOrderKM ? `<span style="color:#b91c1c;font-weight:700">-${fmt(orderKM)}</span>` : '—');
+    const ttCol = showOrderKM
+      ? `<div style="text-decoration:line-through;color:#9ca3af;font-weight:400;font-size:9px">${fmt(lineTotal)}</div><div>${fmt(sauKM)}</div>`
+      : `<strong>${fmt(lineTotal)}</strong>`;
+    itemsHtml += `<tr>
+      <td class="center" style="color:#888;font-size:11px">${i+1}</td>
+      <td><strong>${esc(brand)} ${esc(model)}</strong></td>
+      <td>${esc(color)}</td>
+      <td><span class="vin">${esc(vin)}</span></td>
+      <td><span class="vin">${esc(engine)}</span></td>
+      <td class="center">${item.quantity ?? 1}</td>
+      <td class="right">${fmt(item.unit_price)}</td>
+      <td class="center">${ckCol}</td>
+      <td class="right">${ttCol}</td>
+    </tr>`;
+  });
+  document.getElementById('itemsBody').innerHTML = itemsHtml
+    || '<tr><td colspan="9" style="color:#aaa;text-align:center;padding:12px">Chưa có sản phẩm</td></tr>';
+
+  /* Phụ kiện */
+  const accessories = o.sales_order_accessories ?? [];
+  let accSubtotal = 0;
+  if (accessories.length > 0) {
+    let aHtml = '';
+    accessories.forEach((a, i) => {
+      accSubtotal += Number(a.line_total ?? 0);
+      const isBattery = (a.accessories?.category ?? a.category) === 'battery';
+      const serials   = Array.isArray(a.serial_numbers) ? a.serial_numbers.filter(Boolean) : [];
+      const assignType = a.assignment_type;
+      const isRent    = isBattery && assignType === 'rent';
+      const typeBadge = isBattery
+        ? (isRent
+            ? '<span style="background:#f5f3ff;color:#6d28d9;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600">Pin thuê</span>'
+            : '<span style="background:#f0fdf4;color:#15803d;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600">Mua đứt</span>')
+        : '';
+      aHtml += `<tr>
+        <td class="center dimmed">${i+1}</td>
+        <td>
+          <strong>${esc(a.accessories?.name ?? a.name ?? '—')}</strong> ${typeBadge}
+          ${serials.length ? `<div style="font-size:9px;color:#0369a1;margin-top:1px;font-family:'Courier New',monospace">🔋 Serial: ${serials.map(s => esc(s)).join(', ')}</div>` : ''}
+        </td>
+        <td><span class="vin">${esc(a.accessories?.code ?? a.code ?? '—')}</span></td>
+        <td class="center">${a.quantity ?? 1}</td>
+        <td class="right">${isRent ? '—' : fmt(a.unit_price)}</td>
+        <td class="right"><strong>${isRent ? '0 ₫' : fmt(a.line_total)}</strong></td>
+      </tr>`;
+    });
+    document.getElementById('accBody').innerHTML = aHtml;
+    document.getElementById('accSection').style.display = '';
+  }
+
+  /* Phí & Dịch vụ */
+  const fees     = o.sales_order_fees     ?? [];
+  const services = o.sales_order_services ?? [];
+  let feeSubtotal = 0;
+  if (fees.length > 0 || services.length > 0) {
+    let fHtml = '';
+    let idx = 0;
+    fees.forEach((f) => {
+      feeSubtotal += Number(f.amount ?? 0);
+      fHtml += `<tr>
+        <td class="center dimmed">${++idx}</td>
+        <td><strong>${esc(f.fee_label ?? f.name ?? '—')}</strong></td>
+        <td><span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">Phí</span></td>
+        <td class="right"><strong>${fmt(f.amount)}</strong></td>
+      </tr>`;
+    });
+    services.forEach((s) => {
+      feeSubtotal += Number(s.price ?? 0);
+      fHtml += `<tr>
+        <td class="center dimmed">${++idx}</td>
+        <td><strong>${esc(s.service_name ?? s.name ?? '—')}</strong></td>
+        <td><span style="background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">Dịch vụ</span></td>
+        <td class="right"><strong>${fmt(s.price)}</strong></td>
+      </tr>`;
+    });
+    document.getElementById('feeBody').innerHTML = fHtml;
+    document.getElementById('feeSection').style.display = '';
+  }
+
+  /* Khuyến mãi — dùng field thật từ API */
+  const promos = o.sales_order_promotions ?? o.order_promotions ?? [];
+  const PROMO_TYPE_LABEL = {
+    percent: { text: 'Giảm %',    bg: '#dbeafe', color: '#1d4ed8' },
+    fixed:   { text: 'Giảm tiền', bg: '#dcfce7', color: '#15803d' },
+    gift:    { text: 'Quà tặng',  bg: '#ede9fe', color: '#6d28d9' },
+    combo:   { text: 'Combo',     bg: '#fef3c7', color: '#92400e' },
+  };
+  if (promos.length > 0) {
+    let pHtml = '';
+    promos.forEach((p, i) => {
+      const pt    = PROMO_TYPE_LABEL[p.promo_type] ?? { text: p.promo_type ?? '—', bg: '#f3f4f6', color: '#374151' };
+      const badge = `<span style="background:${pt.bg};color:${pt.color};padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">${esc(pt.text)}</span>`;
+      let uu;
+      if (p.promo_type === 'gift' || p.promo_type === 'combo') {
+        uu = `<span style="color:#6d28d9">🎁 ${esc(p.gift_item_name ?? '')}${p.gift_quantity > 0 ? ' ×' + p.gift_quantity : ''}</span>`;
+      } else if ((p.discount_amount ?? 0) > 0) {
+        uu = `<span style="color:#b91c1c;font-weight:700">-${fmt(p.discount_amount)}</span>`;
+      } else {
+        uu = '—';
+      }
+      pHtml += `<tr class="promo-row">
+        <td class="center dimmed">${i+1}</td>
+        <td class="promo-label"><strong>${esc(p.promo_name ?? p.description ?? '—')}</strong></td>
+        <td>${badge}</td>
+        <td class="right">${uu}</td>
+      </tr>`;
+    });
+    document.getElementById('promoBody').innerHTML = pHtml;
+    document.getElementById('promoSection').style.display = '';
+  }
+
+  /* Totals — hiện breakdown nếu có nhiều hơn 1 nhóm */
+  const hasMultiGroup = (accSubtotal > 0 || feeSubtotal > 0);
+  if (hasMultiGroup) {
+    document.getElementById('subtotalVehicleRow').style.display = '';
+    document.getElementById('subtotalVehicle').textContent = fmt(vehicleSubtotal);
+    if (accSubtotal > 0) {
+      document.getElementById('subtotalAccRow').style.display = '';
+      document.getElementById('subtotalAcc').textContent = fmt(accSubtotal);
+    }
+    if (feeSubtotal > 0) {
+      document.getElementById('subtotalFeeRow').style.display = '';
+      document.getElementById('subtotalFee').textContent = fmt(feeSubtotal);
+    }
+  }
+  document.getElementById('subtotal').textContent = fmt(o.subtotal ?? o.total_amount);
+  if ((o.discount_amount ?? 0) > 0) {
+    document.getElementById('discountRow').style.display = '';
+    document.getElementById('discountAmt').textContent   = '-' + fmt(o.discount_amount);
+  }
+  if ((o.tax_amount ?? 0) > 0) {
+    document.getElementById('taxRow').style.display = '';
+    document.getElementById('taxAmt').textContent   = fmt(o.tax_amount);
+  }
+  document.getElementById('totalAmount').textContent = fmt(o.total_amount);
+
+  /* Thanh toán */
+  const payments  = o.payments ?? [];
+  const confirmed = payments.filter(p => p.status === 'confirmed');
+  const totalPaid = confirmed.reduce((s, p) => s + Number(p.amount), 0);
+  const remaining = Number(o.total_amount) - totalPaid;
+
+  let payHtml = '';
+  payments.forEach((p, i) => {
+    const ps = PAY_STATUS[p.status] ?? { label: p.status, color: '#555' };
+    const ref = [p.receipt_number, p.bank_reference].filter(Boolean).join(' / ') || '—';
+    const confirmedBy = p.confirmed_by_user?.full_name
+      ? `<span class="dimmed">(${esc(p.confirmed_by_user.full_name)})</span>` : '';
+    payHtml += `<tr${p.status === 'cancelled' ? ' style="opacity:.55"' : ''}>
+      <td class="center dimmed">${i+1}</td>
+      <td>${fmtDate(p.payment_date)}</td>
+      <td>${PAY_METHOD[p.payment_method] ?? p.payment_method}</td>
+      <td style="font-family:monospace;font-size:11px">${esc(ref)}</td>
+      <td style="color:${ps.color};font-weight:600;font-size:11px">${ps.label} ${confirmedBy}</td>
+      <td class="right"><strong>${fmt(p.amount)}</strong></td>
+    </tr>`;
+  });
+  document.getElementById('paymentBody').innerHTML = payHtml
+    || '<tr><td colspan="6" style="color:#aaa;text-align:center;padding:10px">Chưa có thanh toán</td></tr>';
+  document.getElementById('totalPaid').textContent = fmt(totalPaid);
+
+  /* Công nợ bar */
+  const bar = document.getElementById('debtBar');
+  if (remaining <= 0) {
+    bar.classList.add('paid');
+    document.getElementById('debtLabel').textContent  = '✅ Đã thanh toán đủ';
+    document.getElementById('debtAmount').textContent = '0 ₫';
+  } else {
+    document.getElementById('debtLabel').textContent  = '🔴 Công nợ còn lại:';
+    document.getElementById('debtAmount').textContent = fmt(remaining);
+  }
+
+  /* Ghi chú */
+  const nb = document.getElementById('notesBox');
+  if (o.notes?.trim()) {
+    nb.textContent = o.notes;
+  } else {
+    nb.textContent = 'Không có ghi chú.';
+    nb.classList.add('empty');
+  }
+
+  /* Chữ ký */
+  document.getElementById('sigSales').textContent    = o.sales_user?.full_name ?? '—';
+  document.getElementById('sigCustomer').textContent = o.customers?.full_name  ?? '—';
+
+  /* Tiêu đề trang */
+  document.title = `Phiếu bán hàng ${o.order_number ?? ''}`;
+}
+
+render(ORDER);
+</script>
+</body>
+</html>

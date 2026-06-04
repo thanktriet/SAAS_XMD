@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: xmd-db
+    restart: always
+    environment:
+      POSTGRES_DB: erp_xe_may_dien
+      POSTGRES_USER: xmd_user
+      POSTGRES_PASSWORD: ${DB_PASS:-changeme_strong_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend-production/000_full_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./backend-production/migrations/001_license_system.sql:/docker-entrypoint-initdb.d/02_license.sql
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xmd_user -d erp_xe_may_dien"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: ./backend-production
+      dockerfile: Dockerfile
+    container_name: xmd-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: erp_xe_may_dien
+      DB_USER: xmd_user
+      DB_PASSWORD: ${DB_PASS:-changeme_strong_password}
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_random_64_chars}
+      JWT_EXPIRES_IN: 15m
+      REFRESH_TOKEN_DAYS: 7
+      MAX_LOGIN_ATTEMPTS: 5
+      LOCKOUT_MINUTES: 15
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  # Nginx (frontend + reverse proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: xmd-nginx
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads:/uploads:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+
+  # Certbot (auto-renew SSL)
+  certbot:
+    image: certbot/certbot
+    container_name: xmd-certbot
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  pgdata:
+  uploads:
+  certbot-conf:
+  certbot-www:

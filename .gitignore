@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Uploads (user data, not source code)
+backend-production/uploads/*
+!backend-production/uploads/.gitkeep
+
+# Build output
+frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Temp files
+_reset_pw.js
+*.tmp
+*.swp
+
+# Docker volumes
+pgdata/
+
+nul
+frontend/nul

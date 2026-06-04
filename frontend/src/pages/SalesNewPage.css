@@ -1,0 +1,1171 @@
+/* ===== POS BÁN HÀNG — Stylesheet hoàn chỉnh ===== */
+
+/* ─── Wrapper ─────────────────────────────────────────────────────────────── */
+.pos-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+/* ─── Topbar ──────────────────────────────────────────────────────────────── */
+.pos-topbar {
+  height: 52px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.pos-topbar-left  { display: flex; align-items: center; gap: 8px; }
+.pos-topbar-sep   { color: var(--gray-300); font-size: 18px; }
+.pos-topbar-sub   { font-size: 13px; color: var(--gray-500); }
+
+.pos-topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  justify-content: center;
+}
+
+.pos-ma-don {
+  font-size: 12.5px;
+  background: var(--primary-light);
+  border: 1px solid #bfdbfe;
+  padding: 3px 12px;
+  border-radius: 100px;
+  font-family: monospace;
+  letter-spacing: .3px;
+  color: var(--primary);
+}
+.pos-ma-don b  { font-weight: 700; }
+.pos-ma-tam    { font-size: 10px; opacity: .7; font-style: italic; font-family: sans-serif; }
+
+.pos-ngay-gio  { font-size: 12.5px; color: var(--gray-500); }
+
+.pos-topbar-right { display: flex; align-items: center; }
+.pos-user-badge   { display: flex; align-items: center; gap: 8px; }
+.pos-user-avatar  {
+  width: 32px; height: 32px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.pos-user-name { font-size: 12.5px; font-weight: 600; color: var(--gray-700); line-height: 1.2; }
+.pos-user-role { font-size: 11px; color: var(--gray-400); text-transform: capitalize; }
+
+/* ─── Content 3 cột ───────────────────────────────────────────────────────── */
+.pos-content {
+  display: grid;
+  grid-template-columns: 300px 1fr 350px;
+  gap: 10px;
+  padding: 10px 12px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.pos-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.pos-col::-webkit-scrollbar { width: 4px; }
+.pos-col::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+
+.pos-col-narrow { /* cột 3 */ }
+
+
+/* ─── Card ────────────────────────────────────────────────────────────────── */
+.pos-card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.pos-card-tall {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+  overflow: hidden;
+}
+.pos-card-mt { margin-top: 10px; }
+
+.pos-card-header {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+.pos-step-badge {
+  width: 20px; height: 20px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.pos-card-title { font-size: 13px; font-weight: 600; flex: 1; color: var(--gray-800); }
+.pos-card-body  { padding: 12px 13px; overflow-y: auto; }
+
+/* ─── Fields & Inputs ─────────────────────────────────────────────────────── */
+.pos-field  { margin-bottom: 9px; }
+.pos-label  { display: block; font-size: 11.5px; font-weight: 500; color: var(--gray-600); margin-bottom: 3px; }
+.pos-required { color: var(--danger); margin-left: 2px; }
+
+.pos-input-wrap { position: relative; }
+
+.pos-input {
+  width: 100%;
+  padding: 6px 30px 6px 9px;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--gray-800);
+  background: white;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  appearance: none;
+}
+.pos-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.pos-input-selected { border-color: var(--success); background: #f0fdf4; }
+.pos-input-sm       { padding: 5px 28px 5px 9px; font-size: 12.5px; }
+.pos-input-money    { padding-left: 22px; font-size: 14px; font-weight: 600; color: var(--gray-900); }
+
+.pos-input-prefix {
+  position: absolute; left: 8px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px; color: var(--gray-500); pointer-events: none;
+}
+.pos-input-icon {
+  position: absolute; right: 9px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px; color: var(--gray-400); pointer-events: none;
+}
+
+.pos-textarea { padding: 7px 9px; resize: none; line-height: 1.45; font-size: 12.5px; }
+
+/* Spinner nhỏ trong input icon */
+.pos-spin {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .5s linear infinite;
+}
+
+/* ─── Dropdown KH ─────────────────────────────────────────────────────────── */
+.pos-dropdown {
+  position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 400;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pos-dropdown-item {
+  padding: 8px 12px; cursor: pointer;
+  transition: background .1s;
+  border-bottom: 1px solid var(--gray-50);
+}
+.pos-dropdown-item:last-child { border-bottom: none; }
+.pos-dropdown-item:hover { background: var(--primary-light); }
+.pos-dropdown-name { font-size: 13px; font-weight: 500; color: var(--gray-800); }
+.pos-dropdown-sub  { font-size: 11.5px; color: var(--gray-500); margin-top: 1px; }
+
+/* ─── Card KH đã chọn ─────────────────────────────────────────────────────── */
+.pos-kh-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.pos-kh-avatar {
+  width: 36px; height: 36px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.pos-kh-info   { flex: 1; min-width: 0; }
+.pos-kh-name   { font-size: 13.5px; font-weight: 600; color: var(--gray-900); }
+.pos-kh-meta   { font-size: 12px; color: var(--gray-600); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pos-kh-clear  {
+  width: 22px; height: 22px; border: none; background: none; cursor: pointer;
+  color: var(--gray-400); font-size: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.pos-kh-clear:hover { background: #fee2e2; color: var(--danger); }
+
+/* Loyalty box */
+.pos-loyalty-box {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 10px; border-radius: 6px;
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  font-size: 12px; color: var(--gray-500);
+  margin-top: 4px;
+}
+.pos-loyalty-box.has-data { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+
+/* ─── Layout cột xe ───────────────────────────────────────────────────────── */
+.pos-xe-layout {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  min-height: 430px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.pos-xe-list {
+  width: 120px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--gray-100);
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.pos-xe-list-title {
+  font-size: 10px; font-weight: 600;
+  color: var(--gray-400); text-transform: uppercase;
+  letter-spacing: .6px; padding: 0 10px 6px;
+}
+.pos-xe-empty { padding: 10px; font-size: 12px; color: var(--gray-400); }
+
+.pos-xe-skeleton { padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+.pos-skel {
+  height: 32px; border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.pos-xe-item {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 7px 10px;
+  border: none; background: none; cursor: pointer;
+  font-size: 12.5px; color: var(--gray-600);
+  text-align: left; transition: all .12s;
+  border-left: 3px solid transparent;
+}
+.pos-xe-item:hover { background: var(--gray-50); color: var(--gray-800); }
+.pos-xe-item.active {
+  background: var(--primary-light);
+  color: var(--primary); font-weight: 600;
+  border-left-color: var(--primary);
+}
+.pos-xe-icon { font-size: 14px; flex-shrink: 0; }
+.pos-xe-name { line-height: 1.3; }
+
+/* ─── Detail xe ───────────────────────────────────────────────────────────── */
+.pos-xe-detail {
+  flex: 1; padding: 12px;
+  overflow-y: auto; min-width: 0;
+}
+.pos-xe-placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; color: var(--gray-300);
+  gap: 10px; font-size: 13px;
+}
+.pos-xe-placeholder span:first-child { font-size: 48px; }
+
+.pos-xe-detail-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 8px;
+}
+.pos-xe-detail-title { font-size: 11px; color: var(--gray-500); font-weight: 500; }
+.pos-xe-detail-name  { font-size: 15px; font-weight: 700; color: var(--gray-900); margin-top: 2px; }
+.pos-xe-detail-price { font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+
+.pos-xe-img-wrap {
+  width: 100%; height: 110px;
+  background: var(--gray-50);
+  border-radius: 8px; border: 1px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px; overflow: hidden;
+}
+.pos-xe-img    { max-width: 100%; max-height: 100%; object-fit: contain; }
+.pos-xe-img-ph { font-size: 52px; }
+
+/* ─── Màu sắc ─────────────────────────────────────────────────────────────── */
+.pos-mau-label   { font-size: 11.5px; font-weight: 500; color: var(--gray-600); margin-bottom: 6px; }
+.pos-mau-loading { font-size: 12px; color: var(--gray-400); padding: 4px 0; }
+.pos-mau-empty   { font-size: 12px; color: var(--danger);  padding: 4px 0; }
+
+.pos-mau-row  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pos-mau-btn  {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  cursor: pointer;
+  position: relative;
+  transition: transform .15s, border-color .15s;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.pos-mau-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--mau-color, #9ca3af);
+  display: block;
+}
+.pos-mau-btn.active  { border-color: var(--primary); transform: scale(1.15); }
+.pos-mau-check       { position: absolute; font-size: 11px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.pos-mau-ten         { font-size: 12.5px; color: var(--gray-600); }
+.pos-mau-count       { font-size: 11px; color: var(--gray-400); }
+
+/* ─── VIN ─────────────────────────────────────────────────────────────────── */
+.pos-vin-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.pos-vin-group {}
+.pos-vin-box   {
+  padding: 6px 8px; background: var(--gray-50);
+  border: 1px solid var(--gray-200); border-radius: 6px;
+  font-size: 11.5px; display: flex; flex-direction: column; gap: 2px;
+}
+.pos-vin-ok-box  { border-color: #bbf7d0; background: #f0fdf4; }
+.pos-vin-conflict-box { border-color: #fecaca; background: #fef2f2; }
+.pos-vin-status  { font-size: 10.5px; color: var(--success); }
+.pos-vin-val     { font-family: monospace; font-size: 11px; color: var(--gray-700); word-break: break-all; }
+.pos-vin-gray    { color: var(--gray-400); }
+
+/* ─── Khuyến mãi ──────────────────────────────────────────────────────────── */
+.pos-add-km-form {
+  background: var(--gray-50); border-radius: 6px;
+  padding: 10px; margin-bottom: 10px;
+  border: 1px dashed var(--gray-300);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.pos-add-km-row { display: flex; gap: 6px; align-items: center; }
+
+.pos-km-header-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10.5px; font-weight: 600;
+  color: var(--gray-500); text-transform: uppercase;
+  letter-spacing: .4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 4px;
+}
+.pos-km-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gray-50);
+  opacity: .45; transition: opacity .15s;
+}
+.pos-km-row.checked { opacity: 1; }
+.pos-km-check  { width: 14px; height: 14px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+.pos-km-ten    { flex: 1; font-size: 12.5px; }
+.pos-km-loai   { font-size: 10.5px; width: 72px; justify-content: center; }
+.pos-km-gia    { font-size: 12.5px; font-weight: 600; width: 105px; text-align: right; white-space: nowrap; }
+.pos-km-empty  { font-size: 12px; color: var(--gray-400); padding: 8px 0; text-align: center; }
+
+/* ─── Ghi chú & giao hàng ─────────────────────────────────────────────────── */
+.pos-ghichu-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px 13px; }
+
+.pos-upload-area {
+  display: flex; align-items: center; gap: 8px;
+  border: 2px dashed var(--gray-300); border-radius: 7px;
+  padding: 9px 12px; cursor: pointer;
+  font-size: 12px; color: var(--gray-500);
+  transition: all .15s; margin-top: 4px;
+}
+.pos-upload-area:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+.pos-tl-list  { margin-top: 8px; }
+.pos-tl-item  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-600); padding: 2px 0; }
+.pos-tl-check { color: var(--success); font-size: 12px; }
+
+/* ─── Cột thanh toán ─────────────────────────────────────────────────────── */
+.pos-section-label {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--gray-500); text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 7px;
+}
+
+.pos-hinhthuc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+.pos-hinhthuc-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 4px;
+  border: 1.5px solid var(--gray-300); border-radius: 7px;
+  background: white; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: all .12s; color: var(--gray-700);
+}
+.pos-hinhthuc-btn:hover  { border-color: var(--primary); color: var(--primary); }
+.pos-hinhthuc-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+/* ─── Form trả góp ─────────────────────────────────────────────────────────── */
+.pos-tragop-form {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.pos-tragop-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pos-tragop-result {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding: 6px 0; border-top: 1px dashed #fde68a;
+  font-size: 12.5px; color: #92400e;
+}
+.pos-tragop-amount { font-size: 15px; font-weight: 700; color: #b45309; }
+
+/* ─── Bảng giá ─────────────────────────────────────────────────────────────── */
+.pos-price-table {
+  background: #f8fafc; border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  padding: 9px 12px; margin-bottom: 12px;
+}
+.pos-price-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; font-size: 12.5px; color: var(--gray-700);
+  border-bottom: 1px dashed var(--gray-200);
+}
+.pos-price-row:last-child { border-bottom: none; }
+.pos-price-row.text-danger { color: var(--danger); }
+.pos-price-row.text-danger span:last-child { font-weight: 600; }
+
+.pos-price-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  padding: 8px 0 3px;
+  border-bottom: 1px dashed var(--gray-200);
+  margin-bottom: 1px;
+}
+.pos-price-section-title:first-child { padding-top: 0; }
+
+.pos-price-row-sub {
+  padding-left: 8px;
+  font-size: 12px;
+  color: var(--gray-700);
+}
+.pos-price-row-sub span:last-child { font-weight: 500; }
+
+.pos-price-row-subtotal {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0 6px;
+  font-size: 12px; font-weight: 700;
+  color: var(--gray-800);
+  border-bottom: 1px dashed var(--gray-200);
+}
+.pos-price-row-subtotal span:last-child { font-weight: 700; }
+
+.pos-price-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 2px solid var(--gray-300);
+  font-size: 13px; font-weight: 600; color: var(--gray-800);
+}
+.pos-price-total { font-size: 19px; font-weight: 800; color: var(--primary); }
+
+/* ─── Phương thức TT ───────────────────────────────────────────────────────── */
+.pos-pttt-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.pos-pttt-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 7px 4px;
+  border: 1.5px solid var(--gray-300); border-radius: 7px;
+  background: white; cursor: pointer; transition: all .12s;
+}
+.pos-pttt-btn:hover  { border-color: var(--primary); }
+.pos-pttt-btn.active { border-color: var(--primary); background: var(--primary-light); }
+.pos-pttt-icon  { font-size: 17px; }
+.pos-pttt-label { font-size: 11px; font-weight: 500; color: var(--gray-700); }
+.pos-pttt-btn.active .pos-pttt-label { color: var(--primary); }
+
+/* ─── Đặt cọc / Còn lại ───────────────────────────────────────────────────── */
+.pos-con-lai {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; margin-bottom: 8px;
+  background: #fffbeb; border-radius: 6px;
+  border: 1px solid #fde68a;
+  font-size: 12.5px; color: #92400e;
+}
+.pos-con-lai-val { font-weight: 700; font-size: 14px; }
+
+/* ─── Tiền thối ───────────────────────────────────────────────────────────── */
+.pos-tien-thoi {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 11px; margin-top: 8px;
+  background: var(--gray-50); border-radius: 7px;
+  border: 1px solid var(--gray-200);
+  font-size: 12.5px; color: var(--gray-600);
+}
+.pos-tien-thoi.has-thoi { background: #f0fdf4; border-color: #bbf7d0; }
+.pos-tien-thoi-val { font-size: 16px; font-weight: 700; color: var(--gray-400); }
+.pos-tien-thoi.has-thoi .pos-tien-thoi-val { color: var(--success); }
+
+/* ─── Tóm tắt đơn ─────────────────────────────────────────────────────────── */
+.pos-don-summary {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.pos-don-xe { display: flex; gap: 8px; align-items: flex-start; }
+.pos-don-xe span { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.pos-don-xe-name { font-size: 13px; font-weight: 600; color: var(--primary); }
+.pos-don-xe-sub  { font-size: 11.5px; color: var(--gray-600); margin-top: 2px; }
+.pos-don-xe-vin  { font-size: 11px; font-family: monospace; color: var(--gray-500); margin-top: 1px; }
+.pos-don-kh { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--gray-700); }
+
+/* ─── Footer ──────────────────────────────────────────────────────────────── */
+.pos-footer {
+  height: 54px;
+  background: white;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  box-shadow: 0 -1px 4px rgba(0,0,0,.05);
+}
+
+.pos-warning-text {
+  font-size: 12.5px; color: #b45309; font-weight: 500;
+}
+
+.pos-btn-draft {
+  border-color: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.pos-btn-confirm {
+  background: #16a34a;
+  color: white;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 22px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background .15s;
+}
+.pos-btn-confirm:hover:not(:disabled)  { background: #15803d; }
+.pos-btn-confirm:disabled              { opacity: .6; cursor: not-allowed; }
+
+/* ─── Chọn phiên bản (variant) trong POS ─── */
+.pos-variant-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pos-variant-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all .13s;
+  text-align: left;
+}
+.pos-variant-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.pos-variant-btn.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 2px rgba(37,99,235,.12);
+}
+.pos-variant-ten {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+.pos-variant-btn.active .pos-variant-ten { color: var(--primary); font-weight: 600; }
+
+.pos-variant-gia {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+.pos-variant-btn.active .pos-variant-gia { color: var(--primary); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ACCESSORIES PANEL — Phụ Kiện Bán Kèm
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Badge bước (màu teal) */
+.pos-step-badge-pk {
+  background: #0d9488 !important;
+  font-size: 13px !important;
+}
+
+/* Badge số loại đã chọn trong header */
+.pos-pk-header-badge {
+  margin-left: auto;
+  background: #0d9488;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 100px;
+}
+
+/* Hint / loading */
+.pos-pk-hint,
+.pos-pk-loading {
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 12.5px;
+  padding: 18px 8px;
+  font-style: italic;
+}
+.pos-pk-loading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: center;
+  font-style: normal;
+}
+
+/* ─── Lọc danh mục ─── */
+.pos-pk-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.pos-pk-cat-btn {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1.5px solid var(--gray-200);
+  background: white;
+  cursor: pointer;
+  color: var(--gray-600);
+  transition: all .12s;
+  white-space: nowrap;
+}
+.pos-pk-cat-btn:hover  { border-color: #0d9488; color: #0d9488; }
+.pos-pk-cat-btn.active { border-color: #0d9488; background: #f0fdfa; color: #0f766e; font-weight: 600; }
+
+/* ─── Grid catalog ─── */
+.pos-pk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pos-pk-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px 8px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all .13s ease;
+  position: relative;
+  text-align: center;
+}
+.pos-pk-item:hover {
+  border-color: #0d9488;
+  box-shadow: 0 3px 10px rgba(13,148,136,.18);
+  transform: translateY(-2px);
+}
+.pos-pk-item.pos-pk-item-selected {
+  border-color: #0d9488;
+  background: #f0fdfa;
+  box-shadow: 0 0 0 2px rgba(13,148,136,.2);
+}
+
+/* Ảnh / icon trong item */
+.pos-pk-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  background: var(--gray-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--gray-100);
+}
+.pos-pk-img img        { width: 100%; height: 100%; object-fit: cover; }
+.pos-pk-icon-ph        { font-size: 30px; line-height: 1; }
+
+/* Badge số lượng góc trên phải của ảnh */
+.pos-pk-qty-bubble {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #0d9488;
+  color: white;
+  font-size: 9.5px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid white;
+}
+
+/* Tên + giá bên dưới ảnh */
+.pos-pk-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+}
+.pos-pk-name {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--gray-700);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pos-pk-price {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0d9488;
+}
+.pos-pk-unit {
+  font-size: 9.5px;
+  color: var(--gray-400);
+}
+
+/* ─── Giỏ phụ kiện đã chọn ─── */
+.pos-pk-cart {
+  border-top: 1px solid var(--gray-100);
+  padding-top: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pos-pk-cart-header {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 2px;
+}
+.pos-pk-cart-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  background: #f0fdfa;
+  border-radius: 6px;
+  border: 1px solid #ccfbf1;
+}
+.pos-pk-cart-icon { font-size: 14px; flex-shrink: 0; }
+.pos-pk-cart-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Stepper +/- */
+.pos-pk-qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.pos-pk-qty-ctrl button {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #99f6e4;
+  background: white;
+  color: #0d9488;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.pos-pk-qty-ctrl button:hover { background: #0d9488; color: white; border-color: #0d9488; }
+.pos-pk-qty-ctrl span {
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 16px;
+  text-align: center;
+  color: var(--gray-800);
+}
+
+.pos-pk-cart-total {
+  font-weight: 600;
+  color: #0f766e;
+  font-size: 12px;
+  min-width: 68px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.pos-pk-cart-del {
+  background: none;
+  border: none;
+  color: var(--gray-300);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pos-pk-cart-del:hover { color: #ef4444; }
+
+/* Tổng cuối giỏ */
+.pos-pk-cart-sum {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 7px 0;
+  border-top: 1px dashed #99f6e4;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0d9488;
+  margin-top: 1px;
+}
+
+/* ─── Dòng phụ kiện trong bảng giá Cột 3 ─── */
+.pos-price-row-pk {
+  color: #0d9488 !important;
+  background: #f0fdfa;
+  border-radius: 4px;
+  padding: 4px 6px !important;
+  margin: 1px 0;
+}
+.pos-pk-price-count {
+  font-size: 10px;
+  color: var(--gray-400);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet ≤ 960px  &  Phone ≤ 600px
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── TABLET (≤ 960px): 2 cột, topbar gọn hơn ────────────────────── */
+@media (max-width: 960px) {
+
+  /* Wrapper: cho phép scroll dọc thay vì clip */
+  .pos-wrapper {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  /* Topbar: ẩn ngày giờ, thu gọn */
+  .pos-topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .pos-topbar-center {
+    flex: 1;
+    justify-content: center;
+    gap: 8px;
+  }
+  .pos-ngay-gio { display: none; }
+  .pos-user-name, .pos-user-role { display: none; }
+
+  /* Content: 2 cột — KH+KM bên trái, Xe trung tâm chiếm 2 cột, TT bên phải */
+  .pos-content {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    overflow: visible;
+    height: auto;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  /* Cột xe (cột 2) chiếm full hàng thứ 2 */
+  .pos-content > .pos-col:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .pos-col {
+    overflow: visible;
+    height: auto;
+  }
+
+  .pos-card-tall {
+    min-height: 280px;
+    max-height: 500px;
+  }
+
+  /* Layout xe: list ngang nhỏ lại */
+  .pos-xe-layout {
+    max-height: 460px;
+  }
+  .pos-xe-list { width: 105px; }
+
+  /* Grid phụ kiện: 3 cột thay vì auto */
+  .pos-pk-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Ghi chú: 1 cột */
+  .pos-ghichu-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Touch targets lớn hơn */
+  .pos-input          { padding: 8px 32px 8px 10px; font-size: 14px; }
+  .pos-input-sm       { padding: 7px 28px 7px 10px; }
+  .pos-hinhthuc-btn   { padding: 10px 6px; }
+  .pos-dropdown-item  { padding: 10px 14px; }
+}
+
+/* ─── PHONE (≤ 600px): 1 cột, flow dọc từng bước ─────────────────── */
+@media (max-width: 600px) {
+
+  /* Topbar tối giản */
+  .pos-topbar { height: 48px; padding: 0 10px; }
+  .pos-topbar-sep, .pos-topbar-sub { display: none; }
+  .pos-ma-don { font-size: 12px; padding: 3px 10px; }
+
+  /* Footer cao hơn, nút to hơn */
+  .pos-footer {
+    height: auto;
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .pos-btn-confirm {
+    width: 100%;
+    justify-content: center;
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  .pos-warning-text { text-align: center; font-size: 12px; }
+
+  /* Content: 1 cột dọc hoàn toàn — sắp lại các card theo đúng thứ tự bước 1→7
+     vì HTML gom card vào 3 cột (1,3 / 2,4,5,6 / 7) khiến mobile bị lệch số */
+  .pos-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 8px 120px; /* padding-bottom cho footer fixed */
+  }
+
+  /* Cho các card trong cột "thoát" lên làm con trực tiếp của .pos-content
+     để có thể sắp xếp lại bằng `order` */
+  .pos-content > .pos-col {
+    display: contents;
+  }
+
+  /* Sắp lại theo step badge: 1,2,3,4,5,6,7 */
+  .pos-content > .pos-col:nth-child(1) > .pos-card:nth-child(1) { order: 1; } /* bước 1: KH */
+  .pos-content > .pos-col:nth-child(2) > .pos-card:nth-child(1) { order: 2; } /* bước 2: Xe */
+  .pos-content > .pos-col:nth-child(1) > .pos-card:nth-child(2) { order: 3; } /* bước 3: KM */
+  .pos-content > .pos-col:nth-child(2) > .pos-card:nth-child(2) { order: 4; } /* bước 4: PK */
+  .pos-content > .pos-col:nth-child(2) > .pos-card:nth-child(3) { order: 5; } /* bước 5: DV */
+  .pos-content > .pos-col:nth-child(2) > .pos-card:nth-child(4) { order: 6; } /* bước 6: Ghi chú */
+  .pos-content > .pos-col:nth-child(3) > .pos-card:nth-child(1) { order: 7; } /* bước 7: TT */
+
+  /* Khoảng cách giờ do `gap` lo, bỏ margin-top thừa */
+  .pos-card-mt { margin-top: 0; }
+
+  /* Footer fixed ở đáy màn hình */
+  .pos-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    box-shadow: 0 -2px 12px rgba(0,0,0,.1);
+  }
+
+  /* Cards */
+  .pos-card-tall {
+    min-height: 0;
+    max-height: none;
+    flex: none;
+  }
+
+  /* Xe: list + detail xếp dọc */
+  .pos-xe-layout {
+    flex-direction: column;
+    max-height: none;
+  }
+  .pos-xe-list {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    overflow-y: visible;
+    overflow-x: auto;
+  }
+  .pos-xe-list-title { display: none; }
+  .pos-xe-item {
+    border-left: none;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 20px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    font-size: 13px;
+    min-height: 36px;
+  }
+  .pos-xe-item.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+
+  .pos-xe-detail { padding: 10px; }
+  .pos-xe-img-wrap { height: 90px; }
+
+  /* VIN box: 1 cột */
+  .pos-vin-row { grid-template-columns: 1fr; }
+
+  /* Phụ kiện: 2 cột */
+  .pos-pk-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pos-pk-item { padding: 10px 6px 8px; }
+  .pos-pk-img  { width: 60px; height: 60px; }
+  .pos-pk-icon-ph { font-size: 28px; }
+  .pos-pk-name    { font-size: 11.5px; }
+  .pos-pk-price   { font-size: 11.5px; }
+
+  /* Qty stepper: to hơn */
+  .pos-pk-qty-ctrl button {
+    width: 28px; height: 28px;
+    font-size: 16px;
+  }
+
+  /* Inputs: đủ lớn cho ngón tay */
+  .pos-input {
+    padding: 10px 36px 10px 12px;
+    font-size: 15px;
+    border-radius: 8px;
+    min-height: 44px;
+  }
+  .pos-input-sm {
+    padding: 9px 30px 9px 12px;
+    font-size: 14px;
+    min-height: 40px;
+  }
+  .pos-input-money {
+    font-size: 16px;
+    padding-left: 24px;
+  }
+
+  /* Hình thức TT: stack 2×1 */
+  .pos-hinhthuc-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pos-hinhthuc-btn { padding: 12px 6px; font-size: 13.5px; min-height: 52px; }
+
+  /* Trả góp fields: 1 cột */
+  .pos-tragop-row { grid-template-columns: 1fr; }
+
+  /* Bảng giá: font đủ đọc */
+  .pos-price-table { padding: 10px 12px; }
+  .pos-price-row   { font-size: 13.5px; padding: 6px 0; }
+  .pos-price-total { font-size: 22px; }
+
+  /* Dropdown KH: full width */
+  .pos-dropdown { max-height: 50vh; }
+  .pos-dropdown-item { padding: 12px 14px; }
+  .pos-dropdown-name { font-size: 14px; }
+  .pos-dropdown-sub  { font-size: 12px; }
+
+  /* KH card */
+  .pos-kh-avatar { width: 40px; height: 40px; font-size: 14px; }
+  .pos-kh-name   { font-size: 15px; }
+  .pos-kh-meta   { font-size: 13px; }
+  .pos-kh-clear  { width: 28px; height: 28px; font-size: 18px; }
+
+  /* Khuyến mãi: ẩn header row, chỉ hiện checkbox + tên + ưu đãi */
+  .pos-km-header-row { display: none; }
+  .pos-km-row { gap: 10px; padding: 8px 0; }
+  .pos-km-check { width: 18px; height: 18px; }
+  .pos-km-ten   { font-size: 13px; }
+  .pos-km-loai  { width: auto; }
+  .pos-km-gia   { width: auto; font-size: 13px; }
+
+  /* Ghi chú */
+  .pos-ghichu-layout { padding: 10px; gap: 10px; }
+  .pos-textarea { min-height: 80px; font-size: 14px; }
+
+  /* Con lại */
+  .pos-con-lai { font-size: 13.5px; padding: 8px 12px; }
+  .pos-con-lai-val { font-size: 15px; }
+
+  /* Tiền thối */
+  .pos-tien-thoi { font-size: 14px; padding: 10px 12px; }
+  .pos-tien-thoi-val { font-size: 18px; }
+
+  /* Section label */
+  .pos-section-label { font-size: 11.5px; margin-bottom: 8px; }
+
+  /* Step badge */
+  .pos-step-badge { width: 22px; height: 22px; font-size: 12px; }
+  .pos-card-title { font-size: 14px; }
+  .pos-card-header { padding: 10px 14px; }
+  .pos-card-body   { padding: 12px 14px; }
+
+  /* Label */
+  .pos-label { font-size: 13px; margin-bottom: 4px; }
+}

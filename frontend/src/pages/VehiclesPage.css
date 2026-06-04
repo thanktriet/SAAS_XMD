@@ -1,0 +1,221 @@
+/* ===== VEHICLES PAGE ===== */
+
+/* ─── Thumbnail trong bảng danh sách ─── */
+.vm-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: transform .15s;
+}
+.vm-thumb:hover { transform: scale(1.1); }
+
+.vm-thumb-ph {
+  width: 44px; height: 44px;
+  background: var(--gray-100);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  border: 1px solid var(--gray-200);
+}
+
+.vm-model-link {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 500;
+}
+.vm-model-link:hover { text-decoration: underline; }
+
+/* ─── Chấm màu trong bảng ─── */
+.vm-color-dots { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.vm-color-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,.12);
+  flex-shrink: 0;
+}
+.vm-color-more { font-size: 11px; color: var(--gray-400); }
+
+/* ─── Modal rộng 2 cột ─── */
+.vm-modal { max-width: 960px !important; }
+
+.vm-modal-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  padding: 20px 24px;
+}
+
+.vm-col { display: flex; flex-direction: column; gap: 16px; }
+
+/* ─── Section headers ─── */
+.vm-section { display: flex; flex-direction: column; gap: 8px; }
+.vm-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 2px;
+}
+
+/* ─── Upload ảnh ─── */
+.vm-img-upload {
+  width: 100%;
+  height: 160px;
+  border: 2px dashed var(--gray-300);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.vm-img-upload:hover { border-color: var(--primary); background: var(--primary-light); }
+.vm-img-upload.uploading { cursor: not-allowed; border-color: var(--gray-300); opacity: .7; }
+
+.vm-img-preview {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.vm-img-empty {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  color: var(--gray-400); font-size: 13px;
+}
+.vm-img-empty span:first-child { font-size: 28px; }
+
+/* ─── Gợi ý màu nhanh ─── */
+.vm-mau-goi-y {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.vm-mau-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 100px;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--gray-600);
+  transition: all .12s;
+}
+.vm-mau-chip:hover  { border-color: var(--primary); color: var(--primary); }
+.vm-mau-chip.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+.vm-mau-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.15);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.vm-mau-input-row { display: flex; gap: 6px; }
+
+/* Tags màu đã chọn */
+.vm-mau-tags {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 4px;
+}
+.vm-mau-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px;
+  background: var(--primary-light);
+  border: 1px solid #bfdbfe;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+.vm-mau-tag button {
+  background: none; border: none; cursor: pointer;
+  color: var(--primary); font-size: 14px; padding: 0;
+  line-height: 1; opacity: .6;
+}
+.vm-mau-tag button:hover { opacity: 1; }
+
+/* ─── Phiên bản ─── */
+.vm-variant-input-row { display: flex; gap: 6px; align-items: center; }
+
+.vm-variant-list {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-top: 4px;
+}
+.vm-variant-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+}
+.vm-variant-ten { flex: 1; font-size: 13px; font-weight: 500; }
+.vm-variant-gia { font-size: 13px; font-weight: 600; min-width: 110px; text-align: right; }
+.vm-variant-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--gray-300); font-size: 16px; padding: 0 2px;
+}
+.vm-variant-del:hover { color: var(--danger); }
+
+/* ─── Gợi ý margin ─── */
+.vm-margin-hint {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: var(--gray-50);
+  border-radius: 6px;
+}
+
+/* ─── Toggle active ─── */
+.vm-active-toggle {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; font-size: 13px; color: var(--gray-700);
+}
+.vm-active-toggle input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+/* ─── Modal chi tiết ─── */
+.vm-detail-layout { display: grid; grid-template-columns: 260px 1fr; gap: 24px; }
+
+.vm-detail-img-wrap {
+  width: 260px; height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.vm-detail-img     { width: 100%; height: 100%; object-fit: cover; }
+.vm-detail-img-ph  { font-size: 64px; }
+
+.vm-detail-info {}
+.vm-detail-price { font-size: 26px; font-weight: 800; color: var(--primary); }
+.vm-detail-sub   { font-size: 12px; color: var(--gray-400); margin-bottom: 12px; }
+
+.vm-detail-specs { display: flex; flex-direction: column; gap: 0; }
+.vm-spec-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+.vm-spec-row:last-child { border-bottom: none; }
+.vm-spec-key { color: var(--gray-500); }
+.vm-spec-val { font-weight: 500; color: var(--gray-800); }
+
+/* ─── Responsive mobile ─── */
+@media (max-width: 768px) {
+  .vm-modal-body    { grid-template-columns: 1fr; gap: 0; padding: 14px 16px; }
+  .vm-col + .vm-col { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gray-100); }
+  .vm-detail-layout { grid-template-columns: 1fr; }
+  .vm-detail-img-wrap { width: 100%; height: 200px; }
+  .vm-detail-price  { font-size: 22px; }
+}
+@media (max-width: 480px) {
+  .vm-detail-img-wrap { height: 160px; }
+}

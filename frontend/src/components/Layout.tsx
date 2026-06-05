@@ -48,6 +48,7 @@ export default function Layout() {
 
   const laAdmin          = user?.role === 'admin';
   const laAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+  const laSuperAdmin     = user?.role === 'admin' && !user?.branch_id; // chủ hệ thống, không thuộc chi nhánh nào
   const laSales          = user?.role === 'sales';
 
   // Sales chỉ thấy 3 mục: Khách hàng, Đơn hàng, Tồn kho xe
@@ -112,8 +113,8 @@ export default function Layout() {
       section: 'Quản trị',
       items: [
         { to: '/users',    label: 'Nhân viên', icon: '👤' },
-        ...(laAdmin ? [{ to: '/branches', label: 'Chi nhánh', icon: '🏪' }] : []),
-        ...(laAdmin ? [{ to: '/license',  label: 'License', icon: '🔑' }] : []),
+        ...(laSuperAdmin ? [{ to: '/branches', label: 'Chi nhánh', icon: '🏪' }] : []),
+        ...(laSuperAdmin ? [{ to: '/license',  label: 'License', icon: '🔑' }] : []),
         ...(laAdmin ? [{ to: '/settings', label: 'Cấu hình', icon: '⚙️' }] : []),
       ],
     }] : []),
@@ -174,6 +175,19 @@ export default function Layout() {
         {/* Logo + nút toggle desktop */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-content">
+            {branding?.logo_url && (
+              <img
+                src={branding.logo_url}
+                alt={branding.store_name || ''}
+                style={{
+                  width: collapsed ? 32 : 40,
+                  height: collapsed ? 32 : 40,
+                  borderRadius: 10,
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                }}
+              />
+            )}
             {!collapsed && (
               <div className="sidebar-logo-text">
                 <h1>{branding?.store_name || 'XMĐ'}</h1>

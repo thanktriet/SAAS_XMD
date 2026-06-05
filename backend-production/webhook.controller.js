@@ -13,14 +13,53 @@ const { processPaidOrder: processPaidAccessoryOrder } = require('./accessoryOrde
 // ══════════════════════════════════════════════════════════════════
 
 const handleSepayWebhook = async (req, res) => {
-  // 1. Xác thực API Key (theo docs chính thức)
+  const data = req.body;
+
+  // 1. Validate payload
+  if (!data || !data.gateway) {
+    return res.status(400).json({ success: false, message: 'No data' });
+  }
+
+  // 2. Xác định chi nhánh qua accountNumber
+  let branchId = null;
+  let sepayApiKey = process.env.SEPAY_API_KEY; // fallback global
+
+  if (data.accountNumber) {
+    // Tìm chi nhánh có bank_account khớp
+    const { data: branchSetting } = await supabaseAdmin
+      .from('payment_settings')
+      .select('branch_id, value')
+      .eq('key', 'bank_account')
+      .eq('value', String(data.accountNumber))
+      .maybeSingle();
+
+    if (branchSetting && branchSetting.branch_id) {
+      branchId = branchSetting.branch_id;
+      // Lấy API key của chi nhánh đó
+      const { data: apiKeySetting } = await supabaseAdmin
+        .from('payment_settings')
+        .select('value')
+        .eq('key', 'sepay_api_key')
+        .eq('branch_id', branchId)
+        .maybeSingle();
+      if (apiKeySetting?.value) {
+        sepayApiKey = apiKeySetting.value;
+      }
+    }
+  }
+
+  // 3. Xác thực API Key
   const apiKey = req.headers['authorization'];
-  if (process.env.SEPAY_API_KEY && apiKey !== `Apikey ${process.env.SEPAY_API_KEY}`) {
-    console.error('[SEPay] Webhook từ chối — sai API Key');
+  if (sepayApiKey && apiKey !== `Apikey ${sepayApiKey}`) {
+    console.error('[SEPay] Webhook từ chối — sai API Key', { accountNumber: data.accountNumber, branchId });
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
 
-  const data = req.body;
+  // 4. Inject branch context vào req để getDb(req) dùng đúng scope
+  if (branchId) {
+    req.user = { branch_id: branchId, role: 'system' };
+    req.db = require('./config/supabase').createBranchClient(branchId, 'admin');
+  }
 
   // 2. Validate payload
   if (!data || !data.gateway) {

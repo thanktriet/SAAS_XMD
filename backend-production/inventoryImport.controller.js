@@ -5,9 +5,10 @@ const { supabaseAdmin } = require('./config/supabase');
 function getDb(req) { return req.db || supabaseAdmin; }
 
 // Tên cột Excel hợp lệ (không phân biệt hoa thường, có trim)
-const COT_BAT_BUOC = ['vin', 'ma_model'];
+// VIN là bắt buộc. Để xác định mẫu xe cần có SKU hoặc ma_model (ưu tiên SKU)
+const COT_BAT_BUOC = ['vin']; // ma_model HOẶC sku — kiểm tra logic riêng
 const COT_HOA_DON  = [
-  'vin', 'ma_model', 'so_may', 'so_pin', 'mau_sac',
+  'vin', 'sku', 'ma_model', 'so_may', 'so_pin', 'mau_sac',
   'nam_sx', 'ngay_nhap', 'gia_nhap', 'trang_thai', 'ghi_chu',
 ];
 
@@ -19,7 +20,15 @@ const ALIAS_COT = {
   'so khung':       'vin',
   'frame number':   'vin',
 
-  // Mã model
+  // Mã sản phẩm (SKU / product_code) — ưu tiên để match mẫu xe + màu
+  'sku':              'sku',
+  'mã sản phẩm':     'sku',
+  'ma san pham':      'sku',
+  'product_code':     'sku',
+  'mã sp':            'sku',
+  'ma sp':            'sku',
+
+  // Mã model (fallback nếu không có SKU)
   'ma_model':        'ma_model',
   'mã model':        'ma_model',
   'ma model':        'ma_model',
@@ -143,7 +152,14 @@ const previewImport = async (req, res) => {
     if (cotThieu.length > 0)
       return res.status(400).json({
         error: `File thiếu cột bắt buộc: ${cotThieu.join(', ')}`,
-        hint:  `Tên cột có thể dùng: vin / số khung, ma_model / model`,
+        hint:  `Tên cột có thể dùng: vin / số khung`,
+      });
+
+    // Phải có ít nhất SKU hoặc ma_model
+    if (!colsCo.includes('sku') && !colsCo.includes('ma_model'))
+      return res.status(400).json({
+        error: 'File cần có cột "Mã sản phẩm" (SKU) hoặc "Mã model"',
+        hint:  'Tên cột có thể dùng: sku / mã sản phẩm / product_code, hoặc ma_model / model',
       });
 
     // Lấy tất cả vehicle_models để map ma_model → id
@@ -156,6 +172,22 @@ const previewImport = async (req, res) => {
       modelMap[m.id.toLowerCase()] = m.id;
       modelMap[`${m.brand} ${m.model_name}`.toLowerCase()] = m.id;
       modelMap[m.model_name.toLowerCase()] = m.id;
+    }
+
+    // Lấy tất cả vehicle_model_colors (có product_code) để map SKU → model + color
+    const { data: colorList } = await getDb(req).from('vehicle_model_colors')
+      .select('id, vehicle_model_id, color_name, product_code')
+      .not('product_code', 'is', null);
+
+    // Tạo map: product_code (lowercase) → { vehicle_model_id, color_name }
+    const skuMap = {};
+    for (const c of (colorList || [])) {
+      if (c.product_code) {
+        skuMap[c.product_code.trim().toLowerCase()] = {
+          vehicle_model_id: c.vehicle_model_id,
+          color_name: c.color_name,
+        };
+      }
     }
 
     // Lấy tất cả VIN đã có trong kho để báo trùng
@@ -185,11 +217,26 @@ const previewImport = async (req, res) => {
       if (!vin) errors.push('Thiếu số khung (VIN)');
       else if (vinSet.has(vin)) errors.push(`VIN ${vin} đã tồn tại trong kho`);
 
-      // Model
+      // Match mẫu xe: ưu tiên SKU → fallback ma_model
+      const skuRaw = String(obj.sku ?? '').trim().toLowerCase();
       const maModel = String(obj.ma_model ?? '').trim().toLowerCase();
-      const modelId  = modelMap[maModel] || null;
-      if (!maModel)  errors.push('Thiếu mã model');
-      else if (!modelId) errors.push(`Không tìm thấy model "${obj.ma_model}"`);
+      let modelId = null;
+      let colorFromSku = null;
+
+      if (skuRaw && skuMap[skuRaw]) {
+        // SKU match thành công → lấy vehicle_model_id + color tự động
+        modelId = skuMap[skuRaw].vehicle_model_id;
+        colorFromSku = skuMap[skuRaw].color_name;
+      } else if (skuRaw && !skuMap[skuRaw]) {
+        // SKU có nhưng không tìm thấy trong hệ thống
+        errors.push(`Mã sản phẩm (SKU) "${obj.sku}" không tồn tại trong hệ thống`);
+      } else if (maModel) {
+        // Không có SKU → dùng ma_model
+        modelId = modelMap[maModel] || null;
+        if (!modelId) errors.push(`Không tìm thấy model "${obj.ma_model}"`);
+      } else {
+        errors.push('Thiếu mã sản phẩm (SKU) hoặc mã model');
+      }
 
       // Trạng thái
       const trangThaiRaw = String(obj.trang_thai ?? '').trim().toLowerCase();
@@ -209,14 +256,19 @@ const previewImport = async (req, res) => {
       // Ngày nhập
       const ngayNhap = excelDateToISO(obj.ngay_nhap) || new Date().toISOString().slice(0, 10);
 
+      // Màu sắc: ưu tiên màu nhập tay, fallback màu từ SKU
+      const colorManual = String(obj.mau_sac ?? '').trim() || null;
+      const colorFinal  = colorManual || colorFromSku || null;
+
       rows.push({
         row_number:       ri + 2,         // +2 vì bỏ header và 0-index
         vin,
         vehicle_model_id: modelId,
-        ma_model_raw:     obj.ma_model,
+        sku_raw:          obj.sku || null,
+        ma_model_raw:     obj.ma_model || null,
         engine_number:    String(obj.so_may  ?? '').trim() || null,
         battery_serial:   String(obj.so_pin  ?? '').trim() || null,
-        color:            String(obj.mau_sac ?? '').trim() || null,
+        color:            colorFinal,
         year_manufacture: namSX,
         import_date:      ngayNhap,
         import_price:     giaNhap,
@@ -308,19 +360,25 @@ const downloadTemplate = async (req, res) => {
       .eq('is_active', true)
       .order('brand');
 
+    // Lấy danh sách SKU (product_code) để điền vào sheet tham chiếu
+    const { data: colorsList } = await getDb(req).from('vehicle_model_colors')
+      .select('product_code, color_name, vehicle_model_id, vehicle_models(brand, model_name)')
+      .not('product_code', 'is', null)
+      .eq('is_active', true);
+
     const wb = XLSX.utils.book_new();
 
     // ── Sheet 1: Dữ liệu nhập ──
     const headerRow = [
-      'vin', 'ma_model', 'mau_sac', 'so_may', 'so_pin',
+      'vin', 'sku', 'so_may', 'so_pin', 'mau_sac',
       'nam_sx', 'ngay_nhap', 'gia_nhap', 'trang_thai', 'ghi_chu',
     ];
     const huongDanRow = [
       'Bắt buộc – VD: VF1ABC123456789',
-      'Bắt buộc – Tên model hoặc ID (xem Sheet "Danh sách model")',
-      'VD: Trắng, Đen, Đỏ',
+      'Mã sản phẩm – tự match mẫu xe + màu (xem Sheet "Danh sách SKU")',
       'Số motor / số máy',
       'Serial pin lithium',
+      'Màu sắc (nếu không có SKU sẽ match)',
       'VD: 2025',
       'DD/MM/YYYY hoặc YYYY-MM-DD',
       'Giá nhập (số, VD: 25000000)',
@@ -328,10 +386,11 @@ const downloadTemplate = async (req, res) => {
       'Ghi chú tự do',
     ];
     // 3 dòng mẫu
+    const skuVD = (colorsList && colorsList[0]?.product_code) || 'XMD-VF5-TRANG';
     const viDu = [
-      ['VF1ABC1234567890', models[0]?.model_name ?? 'VF5', 'Trắng', 'EV2025001', 'BAT001', 2025, '01/01/2025', 25000000, 'in_stock', ''],
-      ['VF1XYZ0987654321', models[1]?.model_name ?? 'VF3', 'Đen',   'EV2025002', 'BAT002', 2025, '15/01/2025', 23000000, 'in_stock', 'Nhập từ HN'],
-      ['VF1DEF1122334455', models[0]?.model_name ?? 'VF5', 'Đỏ',    '',          '',       2024, '',           0,         'demo',      'Xe trưng bày'],
+      ['VF1ABC1234567890', skuVD, 'EV2025001', 'BAT001', '', 2025, '01/01/2025', 25000000, 'in_stock', ''],
+      ['VF1XYZ0987654321', colorsList?.[1]?.product_code || 'XMD-VF3-DEN', 'EV2025002', 'BAT002', '', 2025, '15/01/2025', 23000000, 'in_stock', 'Nhập từ HN'],
+      ['VF1DEF1122334455', '', '', '', 'Đỏ', 2024, '', 0, 'demo', 'Xe trưng bày (dùng ma_model thay SKU)'],
     ];
 
     const wsData = [headerRow, huongDanRow, ...viDu];
@@ -339,26 +398,47 @@ const downloadTemplate = async (req, res) => {
 
     // Độ rộng cột
     ws['!cols'] = [
-      { wch: 20 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 18 },
+      { wch: 20 }, { wch: 20 }, { wch: 14 }, { wch: 18 }, { wch: 12 },
       { wch: 8  }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 30 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Nhập kho xe');
 
-    // ── Sheet 2: Danh sách model tham chiếu ──
+    // ── Sheet 2: Danh sách SKU (mã sản phẩm) ──
+    const wsSku = XLSX.utils.aoa_to_sheet([
+      ['Mã sản phẩm (SKU)', 'Hãng', 'Tên model', 'Màu sắc', '→ Dùng cột "sku" ở Sheet 1'],
+      ...(colorsList || []).map(c => [
+        c.product_code,
+        c.vehicle_models?.brand || '',
+        c.vehicle_models?.model_name || '',
+        c.color_name,
+        `${c.vehicle_models?.brand || ''} ${c.vehicle_models?.model_name || ''} - ${c.color_name}`,
+      ]),
+    ]);
+    wsSku['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 20 }, { wch: 14 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsSku, 'Danh sách SKU');
+
+    // ── Sheet 3: Danh sách model tham chiếu ──
     const wsModel = XLSX.utils.aoa_to_sheet([
-      ['ID', 'Hãng', 'Tên model', '→ Dùng cột "ma_model" ở Sheet 1'],
+      ['ID', 'Hãng', 'Tên model', '→ Dùng cột "ma_model" nếu không có SKU'],
       ...(models || []).map(m => [m.id, m.brand, m.model_name, `${m.brand} ${m.model_name}`]),
     ]);
     wsModel['!cols'] = [{ wch: 38 }, { wch: 12 }, { wch: 20 }, { wch: 24 }];
     XLSX.utils.book_append_sheet(wb, wsModel, 'Danh sách model');
 
-    // ── Sheet 3: Hướng dẫn ──
+    // ── Sheet 4: Hướng dẫn ──
     const wsGuide = XLSX.utils.aoa_to_sheet([
       ['HƯỚNG DẪN NHẬP FILE EXCEL KHO XE'],
       [''],
-      ['Cột bắt buộc:', 'vin, ma_model'],
-      ['Cột tuỳ chọn:', 'mau_sac, so_may, so_pin, nam_sx, ngay_nhap, gia_nhap, trang_thai, ghi_chu'],
+      ['Cột bắt buộc:', 'vin (số khung)'],
+      ['Xác định mẫu xe:', 'Cần có "sku" (mã sản phẩm) HOẶC "ma_model" (tên model)'],
+      [''],
+      ['*** ƯU TIÊN DÙNG SKU ***'],
+      ['', 'Chỉ cần điền mã sản phẩm (SKU) + VIN + Số máy'],
+      ['', '→ Hệ thống tự động match đúng mẫu xe + màu sắc'],
+      ['', '→ Không cần điền cột màu sắc'],
+      [''],
+      ['Nếu không có SKU:', 'Dùng cột ma_model + mau_sac để xác định xe'],
       [''],
       ['Cột trang_thai nhận các giá trị:'],
       ['', 'in_stock',        '→ Còn hàng (mặc định)'],
@@ -370,7 +450,7 @@ const downloadTemplate = async (req, res) => {
       ['Định dạng ngày nhập:', 'DD/MM/YYYY  hoặc  YYYY-MM-DD'],
       ['Giá nhập:', 'Số nguyên, không có dấu phẩy hay chữ đơn vị'],
       [''],
-      ['Tên cột có thể dùng tiếng Việt có dấu:', 'VD: "số khung", "màu sắc", "giá nhập"...'],
+      ['Tên cột có thể dùng tiếng Việt có dấu:', 'VD: "số khung", "mã sản phẩm", "số máy"...'],
     ]);
     wsGuide['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsGuide, 'Hướng dẫn');

@@ -1,9 +1,9 @@
 const { supabaseAdmin } = require('./config/supabase');
 
-// GET /api/branding — trả branding cho branch của user hiện tại
+// GET /api/branding — trả branding cho branch (query param hoặc user's branch)
 const getBranding = async (req, res) => {
   try {
-    const branchId = req.user.branch_id;
+    const branchId = req.query.branch_id || req.user.branch_id;
     if (!branchId) {
       return res.json({ store_name: 'XMĐ', subtitle: 'Hệ Thống Bán Hàng Xe Máy Điện' });
     }

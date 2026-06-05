@@ -147,7 +147,7 @@ const login = async (req, res) => {
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('email', email)
+      .ilike('email', email)
       .maybeSingle();
 
     if (!user) {
@@ -369,15 +369,22 @@ const getUsers = async (req, res) => {
     const { search, role, is_active, branch_id } = req.query;
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 50);
+    const isSuperAdmin = req.user.role === 'admin' && !req.user.branch_id;
 
     let q = supabaseAdmin
       .from('users')
       .select('id, email, full_name, phone, role, is_active, avatar_url, branch_id, created_at', { count: 'exact' })
       .order('full_name');
 
+    // Admin chi nhánh chỉ thấy user của chi nhánh mình
+    if (!isSuperAdmin && req.user.branch_id) {
+      q = q.eq('branch_id', req.user.branch_id);
+    } else if (branch_id) {
+      q = q.eq('branch_id', branch_id);
+    }
+
     if (search)    q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
     if (role)      q = q.eq('role', role);
-    if (branch_id) q = q.eq('branch_id', branch_id);
     if (is_active !== undefined) q = q.eq('is_active', is_active === 'true');
 
     q = q.range((page - 1) * limit, page * limit - 1);
@@ -398,10 +405,23 @@ const createUser = async (req, res) => {
     return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
   }
   try {
+    const isSuperAdmin = req.user.role === 'admin' && !req.user.branch_id;
+    const emailLower = email.trim().toLowerCase();
+
+    // Admin chi nhánh: bắt buộc tạo user vào chi nhánh mình, không cho đặt branch_id khác
+    const targetBranchId = isSuperAdmin
+      ? (branch_id || null)
+      : req.user.branch_id;
+
+    // Admin chi nhánh không được tạo role admin
+    if (!isSuperAdmin && role === 'admin') {
+      return res.status(403).json({ error: 'Bạn không có quyền tạo tài khoản admin' });
+    }
+
     const { data: existing } = await supabaseAdmin
       .from('users')
       .select('id')
-      .eq('email', email)
+      .ilike('email', emailLower)
       .maybeSingle();
     if (existing) {
       return res.status(400).json({ error: 'Email đã tồn tại trong hệ thống' });
@@ -411,7 +431,7 @@ const createUser = async (req, res) => {
 
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('users')
-      .insert([{ email, password_hash, full_name, phone: phone || null, role, branch_id: branch_id || null, is_active: true }])
+      .insert([{ email: emailLower, password_hash, full_name, phone: phone || null, role, branch_id: targetBranchId, is_active: true }])
       .select('id, email, full_name, phone, role, is_active, branch_id, created_at')
       .single();
 
@@ -428,7 +448,19 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const allowed = ['full_name', 'phone', 'role', 'avatar_url', 'branch_id'];
+    const isSuperAdmin = req.user.role === 'admin' && !req.user.branch_id;
+
+    // Admin chi nhánh không được sửa branch_id và chỉ sửa user chi nhánh mình
+    if (!isSuperAdmin && req.user.branch_id) {
+      const { data: target } = await supabaseAdmin.from('users').select('branch_id').eq('id', id).maybeSingle();
+      if (!target || target.branch_id !== req.user.branch_id) {
+        return res.status(403).json({ error: 'Bạn chỉ có thể sửa nhân viên trong chi nhánh mình' });
+      }
+    }
+
+    const allowed = isSuperAdmin
+      ? ['full_name', 'phone', 'role', 'avatar_url', 'branch_id']
+      : ['full_name', 'phone', 'role', 'avatar_url']; // admin chi nhánh không được đổi branch_id
     const updates = {};
     allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
 
@@ -452,13 +484,19 @@ const updateUser = async (req, res) => {
 const toggleUser = async (req, res) => {
   try {
     const { id } = req.params;
+    const isSuperAdmin = req.user.role === 'admin' && !req.user.branch_id;
 
     if (req.user.sub === id || req.user.id === id)
       return res.status(409).json({ error: 'Không thể vô hiệu hóa tài khoản đang đăng nhập' });
 
     const { data: cur, error: fetchErr } = await supabaseAdmin
-      .from('users').select('is_active, full_name').eq('id', id).single();
+      .from('users').select('is_active, full_name, branch_id').eq('id', id).single();
     if (fetchErr) return res.status(404).json({ error: 'Không tìm thấy nhân viên' });
+
+    // Admin chi nhánh chỉ toggle user chi nhánh mình
+    if (!isSuperAdmin && req.user.branch_id && cur.branch_id !== req.user.branch_id) {
+      return res.status(403).json({ error: 'Bạn chỉ có thể quản lý nhân viên trong chi nhánh mình' });
+    }
 
     const newActive = !cur.is_active;
     const { data, error } = await supabaseAdmin
@@ -486,12 +524,19 @@ const changePassword = async (req, res) => {
   try {
     const { id } = req.params;
     const { password } = req.body;
+    const isSuperAdmin = req.user.role === 'admin' && !req.user.branch_id;
+
     if (!password || password.length < 6)
       return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
 
     const { data: target, error: fetchErr } = await supabaseAdmin
-      .from('users').select('full_name').eq('id', id).single();
+      .from('users').select('full_name, branch_id').eq('id', id).single();
     if (fetchErr) return res.status(404).json({ error: 'Không tìm thấy nhân viên' });
+
+    // Admin chi nhánh chỉ đổi pass user chi nhánh mình
+    if (!isSuperAdmin && req.user.branch_id && target.branch_id !== req.user.branch_id) {
+      return res.status(403).json({ error: 'Bạn chỉ có thể đổi mật khẩu nhân viên trong chi nhánh mình' });
+    }
 
     const password_hash = await bcrypt.hash(password, 12);
     const { error } = await supabaseAdmin

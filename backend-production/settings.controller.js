@@ -255,7 +255,7 @@ const deleteInstallmentProvider = async (req, res) => {
 };
 
 // ══════════════════════════════════════════════════════════════════
-//  PAYMENT SETTINGS — Cấu hình thanh toán SEPay
+//  PAYMENT SETTINGS — Cấu hình thanh toán SEPay (theo chi nhánh)
 // ══════════════════════════════════════════════════════════════════
 
 const PAYMENT_KEYS = ['bank_code', 'bank_name', 'bank_account', 'bank_account_name', 'sepay_api_key', 'max_cash_allowed', 'loyalty_amount_per_point', 'loyalty_enabled'];
@@ -263,12 +263,34 @@ const PAYMENT_KEYS = ['bank_code', 'bank_name', 'bank_account', 'bank_account_na
 // GET /api/settings/payment  → { bank_code: 'TCB', bank_name: '...', ... }
 const getPaymentSettings = async (req, res) => {
   try {
-    const { data, error } = await getDb(req).from('payment_settings')
+    const branchId = req.user.branch_id || null;
+
+    let q = supabaseAdmin.from('payment_settings')
       .select('key, value')
       .in('key', PAYMENT_KEYS);
+
+    // Lấy settings của chi nhánh, fallback global nếu không có
+    if (branchId) {
+      q = q.eq('branch_id', branchId);
+    } else {
+      q = q.is('branch_id', null);
+    }
+
+    const { data, error } = await q;
     if (error) throw error;
+
     const result = {};
     (data || []).forEach(row => { result[row.key] = row.value; });
+
+    // Nếu chi nhánh chưa có config → fallback lấy global
+    if (branchId && Object.keys(result).length === 0) {
+      const { data: globalData } = await supabaseAdmin.from('payment_settings')
+        .select('key, value')
+        .in('key', PAYMENT_KEYS)
+        .is('branch_id', null);
+      (globalData || []).forEach(row => { result[row.key] = row.value; });
+    }
+
     // Đảm bảo tất cả key đều có giá trị (fallback rỗng)
     PAYMENT_KEYS.forEach(k => { if (!(k in result)) result[k] = ''; });
     res.json(result);
@@ -280,22 +302,38 @@ const getPaymentSettings = async (req, res) => {
 // PUT /api/settings/payment  body: { bank_code, bank_name, ... }
 const updatePaymentSettings = async (req, res) => {
   try {
+    const branchId = req.user.branch_id || null;
     const allowed = PAYMENT_KEYS.filter(k => k in req.body && k !== 'sepay_api_key');
-    // sepay_api_key chỉ update khi admin gửi rõ ràng (không phải manager)
+    // sepay_api_key chỉ update khi admin gửi rõ ràng
     if ('sepay_api_key' in req.body && req.user?.role === 'admin') {
       allowed.push('sepay_api_key');
     }
     if (!allowed.length) return res.status(400).json({ error: 'Không có trường hợp lệ để cập nhật' });
 
-    const upserts = allowed.map(k => ({
-      key:   k,
-      value: String(req.body[k] ?? ''),
-      label: '',  // giữ nguyên label hiện có khi upsert
-    }));
+    // Upsert theo branch_id
+    for (const k of allowed) {
+      const value = String(req.body[k] ?? '');
 
-    const { error } = await getDb(req).from('payment_settings')
-      .upsert(upserts, { onConflict: 'key', ignoreDuplicates: false });
-    if (error) throw error;
+      // Check đã có row cho branch này chưa
+      let checkQ = supabaseAdmin.from('payment_settings')
+        .select('id')
+        .eq('key', k);
+      if (branchId) {
+        checkQ = checkQ.eq('branch_id', branchId);
+      } else {
+        checkQ = checkQ.is('branch_id', null);
+      }
+      const { data: existing } = await checkQ.maybeSingle();
+
+      if (existing) {
+        await supabaseAdmin.from('payment_settings')
+          .update({ value })
+          .eq('id', existing.id);
+      } else {
+        await supabaseAdmin.from('payment_settings')
+          .insert([{ key: k, value, label: '', branch_id: branchId }]);
+      }
+    }
 
     res.json({ success: true });
   } catch (err) {

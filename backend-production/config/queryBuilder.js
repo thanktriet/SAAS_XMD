@@ -706,10 +706,10 @@ class QueryBuilder {
       return { data: null, error: { message: 'No data to insert' } };
     }
 
-    // Auto-inject branch_id into insert data
+    // Auto-inject branch_id into insert data — luôn override để tránh branch hopping
     let rows = this._insertData;
     if (this._autoBranchId) {
-      rows = rows.map(r => ({ branch_id: this._autoBranchId, ...r }));
+      rows = rows.map(r => ({ ...r, branch_id: this._autoBranchId }));
     }
 
     const allKeys = [...new Set(rows.flatMap(r => Object.keys(r)))];

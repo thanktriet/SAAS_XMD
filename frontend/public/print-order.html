@@ -515,17 +515,17 @@ const PAY_STATUS = {
   cancelled: { label: '❌ Đã huỷ',       color: '#b91c1c' },
 };
 
-/* ── Thông tin đại lý — cố định cho VinFast XMĐ Nam Thắng ── */
-const COMPANY_INFO = {
-  name:    'VinFast XMĐ Nam Thắng',
-  address: 'Số 22 Đường Phan Thị Ràng, Phường Rạch Giá, Tỉnh An Giang',
-  phone:   'Hotline: 0938 267 888',
+/* ── Thông tin đại lý — lấy từ branding chi nhánh, fallback mặc định ── */
+const DEFAULT_COMPANY = {
+  name:    'Hệ Thống Bán Hàng Xe Máy Điện',
+  address: '',
+  phone:   '',
 };
 
 /* ── Render ─────────────────────────────────────────────────────── */
 function render(o) {
-  /* Luôn dùng thông tin đại lý cố định, bỏ qua o.company nếu có */
-  const co = COMPANY_INFO;
+  /* Lấy thông tin công ty từ order data (được inject từ app theo branding chi nhánh) */
+  const co = o.company || DEFAULT_COMPANY;
 
   /* Header */
   document.getElementById('companyName').textContent    = co.name;

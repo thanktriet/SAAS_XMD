@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import { useBrandingStore } from '../store/brandingStore';
 import type { PaymentSettings } from '../types';
 import { DEFAULT_PAYMENT_SETTINGS } from '../types';
 import {
@@ -487,8 +488,18 @@ export default function SalesDetailPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => {
-              // Ghi toàn bộ detail vào sessionStorage rồi mở tab in
-              sessionStorage.setItem('print_order', JSON.stringify(detail));
+              // Ghi toàn bộ detail + branding chi nhánh vào sessionStorage rồi mở tab in
+              const { branding } = useBrandingStore.getState();
+              const printData = {
+                ...detail,
+                company: {
+                  name: branding?.store_name || 'Hệ Thống Bán Hàng Xe Máy Điện',
+                  address: branding?.address || '',
+                  phone: branding?.hotline || branding?.phone || '',
+                  logo_url: branding?.logo_url || '',
+                },
+              };
+              sessionStorage.setItem('print_order', JSON.stringify(printData));
               window.open('/print-order.html', '_blank');
             }}
             style={{

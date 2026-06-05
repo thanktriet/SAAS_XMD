@@ -79,6 +79,8 @@ export default function LicenseManagementPage() {
   const [suspendModal, setSuspendModal] = useState<BranchLicense | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
   const [showLogs, setShowLogs] = useState<string | null>(null);
+  const [planModal, setPlanModal] = useState<BranchLicense | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState('');
 
   // Fetch branches
   const { data, isLoading } = useQuery({
@@ -86,6 +88,15 @@ export default function LicenseManagementPage() {
     queryFn: async () => {
       const res = await api.get('/license/branches');
       return res.data as { data: BranchLicense[]; total: number };
+    },
+  });
+
+  // Fetch plans
+  const { data: plansData } = useQuery({
+    queryKey: ['license-plans'],
+    queryFn: async () => {
+      const res = await api.get('/license/plans');
+      return res.data as { data: any[] };
     },
   });
 
@@ -131,6 +142,18 @@ export default function LicenseManagementPage() {
       qc.invalidateQueries({ queryKey: ['license-branches'] });
     },
     onError: (err: any) => toast.error(err.response?.data?.error || 'Lỗi'),
+  });
+
+  // Đổi gói
+  const changePlanMutation = useMutation({
+    mutationFn: ({ id, plan }: { id: string; plan: string }) =>
+      api.post(`/license/branches/${id}/plan`, { plan }),
+    onSuccess: (res) => {
+      toast.success(res.data.message);
+      qc.invalidateQueries({ queryKey: ['license-branches'] });
+      setPlanModal(null);
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || 'Lỗi đổi gói'),
   });
 
   if (user?.role !== 'admin') {
@@ -230,6 +253,12 @@ export default function LicenseManagementPage() {
                           ▶ Mở lại
                         </button>
                       )}
+                      <button
+                        onClick={() => { setPlanModal(branch); setSelectedPlan(branch.license_plan); }}
+                        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e9d5ff', background: '#faf5ff', color: '#7c3aed', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+                      >
+                        📦 Gói
+                      </button>
                       <button
                         onClick={() => setShowLogs(branch.id)}
                         style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#6b7280', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
@@ -359,6 +388,68 @@ export default function LicenseManagementPage() {
           </div>
           <div style={{ marginTop: 20, textAlign: 'right' }}>
             <button onClick={() => setShowLogs(null)} style={{ padding: '10px 20px', borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fff', fontSize: 14, cursor: 'pointer' }}>Đóng</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Đổi gói */}
+      {planModal && (
+        <Modal onClose={() => setPlanModal(null)}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: '#7c3aed' }}>📦 Đổi gói License</h2>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px' }}>Chi nhánh: <strong>{planModal.name}</strong> — Gói hiện tại: <strong>{PLAN_LABELS[planModal.license_plan] || planModal.license_plan}</strong></p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {(plansData?.data || []).map((plan: any) => (
+              <div
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                style={{
+                  padding: '16px 20px', borderRadius: 12, cursor: 'pointer',
+                  border: selectedPlan === plan.id ? '2px solid #7c3aed' : '1.5px solid #e5e7eb',
+                  background: selectedPlan === plan.id ? '#faf5ff' : '#fff',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#111827', fontSize: 15 }}>{plan.name}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{plan.description}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, color: '#7c3aed', fontSize: 16 }}>
+                      {(plan.price_monthly / 1000).toLocaleString()}k
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>/tháng</div>
+                  </div>
+                </div>
+                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3f4f6', color: '#374151' }}>👤 {plan.max_users} users</span>
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3f4f6', color: '#374151' }}>📦 {plan.max_products === -1 ? 'Không giới hạn' : plan.max_products} SP</span>
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3f4f6', color: '#374151' }}>🧾 {plan.max_orders_per_month === -1 ? 'Không giới hạn' : plan.max_orders_per_month} đơn/tháng</span>
+                </div>
+                {plan.features && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: '#6b7280' }}>
+                    {JSON.parse(typeof plan.features === 'string' ? plan.features : JSON.stringify(plan.features)).slice(0, 4).map((f: string, i: number) => (
+                      <div key={i} style={{ marginTop: 2 }}>✓ {f}</div>
+                    ))}
+                    {JSON.parse(typeof plan.features === 'string' ? plan.features : JSON.stringify(plan.features)).length > 4 && (
+                      <div style={{ marginTop: 2, color: '#9ca3af' }}>+{JSON.parse(typeof plan.features === 'string' ? plan.features : JSON.stringify(plan.features)).length - 4} tính năng khác...</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
+            <button onClick={() => setPlanModal(null)} style={{ padding: '10px 20px', borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fff', fontSize: 14, cursor: 'pointer' }}>Hủy</button>
+            <button
+              onClick={() => changePlanMutation.mutate({ id: planModal.id, plan: selectedPlan })}
+              disabled={changePlanMutation.isPending || selectedPlan === planModal.license_plan}
+              style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (changePlanMutation.isPending || selectedPlan === planModal.license_plan) ? 0.6 : 1 }}
+            >
+              {changePlanMutation.isPending ? 'Đang xử lý...' : 'Xác nhận đổi gói'}
+            </button>
           </div>
         </Modal>
       )}

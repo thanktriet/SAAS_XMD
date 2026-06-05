@@ -106,4 +106,111 @@ const getBrands = async (req, res) => {
   }
 };
 
-module.exports = { getVehicleModels, getVehicleModelDetail, createVehicleModel, updateVehicleModel, deleteVehicleModel, getBrands };
+// ─── COLORS MANAGEMENT ───────────────────────────────────────────────────────
+
+// GET /vehicles/:id/colors — danh sách màu + SKU của mẫu xe
+const getModelColors = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from('vehicle_model_colors')
+      .select('id, color_name, color_hex, product_code, image_url, is_active, sort_order, display_order')
+      .eq('vehicle_model_id', id)
+      .order('sort_order')
+      .order('color_name');
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// POST /vehicles/:id/colors — thêm màu mới
+const addModelColor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { color_name, color_hex, product_code, image_url, sort_order } = req.body;
+    if (!color_name) return res.status(400).json({ error: 'Tên màu là bắt buộc' });
+
+    const { data, error } = await supabaseAdmin
+      .from('vehicle_model_colors')
+      .insert([{
+        vehicle_model_id: id,
+        color_name: color_name.trim(),
+        color_hex: color_hex || null,
+        product_code: product_code ? product_code.trim() : null,
+        image_url: image_url || null,
+        sort_order: sort_order || 0,
+        is_active: true,
+      }])
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json({ message: 'Đã thêm màu', data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /vehicles/colors/:colorId — cập nhật màu (tên, mã SKU, v.v.)
+const updateModelColor = async (req, res) => {
+  try {
+    const { colorId } = req.params;
+    const allowed = ['color_name', 'color_hex', 'product_code', 'image_url', 'is_active', 'sort_order'];
+    const updates = {};
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+
+    if (!Object.keys(updates).length)
+      return res.status(400).json({ error: 'Không có trường nào được cập nhật' });
+
+    // Trim strings
+    if (updates.color_name) updates.color_name = updates.color_name.trim();
+    if (updates.product_code) updates.product_code = updates.product_code.trim() || null;
+
+    const { data, error } = await supabaseAdmin
+      .from('vehicle_model_colors')
+      .update(updates)
+      .eq('id', colorId)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Đã cập nhật', data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// DELETE /vehicles/colors/:colorId
+const deleteModelColor = async (req, res) => {
+  try {
+    const { colorId } = req.params;
+
+    // Kiểm tra còn xe trong kho dùng màu này
+    const { count } = await supabaseAdmin
+      .from('inventory_vehicles')
+      .select('*', { count: 'exact', head: true })
+      .eq('vehicle_color_id', colorId)
+      .eq('status', 'in_stock');
+
+    if (count > 0) {
+      return res.status(400).json({ error: `Không thể xóa: còn ${count} xe trong kho dùng màu này` });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('vehicle_model_colors')
+      .delete()
+      .eq('id', colorId);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: 'Đã xóa màu' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  getVehicleModels, getVehicleModelDetail, createVehicleModel, updateVehicleModel, deleteVehicleModel, getBrands,
+  getModelColors, addModelColor, updateModelColor, deleteModelColor,
+};

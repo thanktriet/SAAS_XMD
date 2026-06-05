@@ -463,6 +463,81 @@ const getLicenseDashboard = async (req, res) => {
   }
 };
 
+// Danh sách gói license
+const getPlans = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('license_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Đổi gói license cho chi nhánh
+const changePlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan, reason } = req.body;
+
+    if (!plan) {
+      return res.status(400).json({ error: 'Vui lòng chọn gói' });
+    }
+
+    // Kiểm tra gói hợp lệ
+    const { data: planData } = await supabaseAdmin
+      .from('license_plans')
+      .select('*')
+      .eq('id', plan)
+      .maybeSingle();
+
+    if (!planData) {
+      return res.status(400).json({ error: 'Gói không tồn tại' });
+    }
+
+    const { data: branch, error: fetchErr } = await supabaseAdmin
+      .from('branches')
+      .select('name, license_plan, max_users')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr) return res.status(404).json({ error: 'Không tìm thấy chi nhánh' });
+
+    const previousPlan = branch.license_plan;
+
+    const { error } = await supabaseAdmin
+      .from('branches')
+      .update({ license_plan: plan, max_users: planData.max_users })
+      .eq('id', id);
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    // Ghi log
+    await supabaseAdmin
+      .from('branch_license_logs')
+      .insert([{
+        branch_id: id,
+        action: 'plan_change',
+        previous_plan: previousPlan,
+        new_plan: plan,
+        performed_by: req.user.sub,
+        reason: reason || `Đổi gói từ ${previousPlan} sang ${plan}`,
+        ip_address: req.ip || null,
+      }]);
+
+    res.json({
+      message: `Đã đổi gói chi nhánh "${branch.name}" sang ${planData.name} (max ${planData.max_users} users)`,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getBranches,
   getBranch,
@@ -474,4 +549,6 @@ module.exports = {
   revokeBranch,
   getLicenseLogs,
   getLicenseDashboard,
+  getPlans,
+  changePlan,
 };

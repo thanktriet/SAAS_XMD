@@ -455,7 +455,24 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                {/* Chi nhánh */}
+                {/* Chi nhánh — chỉ super admin mới chọn được */}
+                {toi?.branch_id ? (
+                  <div>
+                    <label style={{
+                      display: 'block', fontSize: 12, fontWeight: 600,
+                      color: '#6b7280', marginBottom: 6,
+                      textTransform: 'uppercase', letterSpacing: 0.3,
+                    }}>
+                      Chi nhánh
+                    </label>
+                    <div style={{
+                      padding: '11px 14px', fontSize: 14, borderRadius: 10,
+                      background: '#f3f4f6', color: '#6b7280',
+                    }}>
+                      {(branchesData || []).find(b => b.id === toi.branch_id)?.branch_name || 'Chi nhánh của bạn'}
+                    </div>
+                  </div>
+                ) : (
                 <div>
                   <label style={{
                     display: 'block', fontSize: 12, fontWeight: 600,
@@ -481,6 +498,7 @@ export default function UsersPage() {
                     ))}
                   </select>
                 </div>
+                )}
               </div>
               <div className="modal-footer" style={{ borderTop: '1px solid #f3f4f6', padding: '14px 20px', gap: 8 }}>
                 <button type="button" className="btn btn-secondary" onClick={dongModal}>Hủy</button>

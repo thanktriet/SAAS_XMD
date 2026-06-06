@@ -69,32 +69,18 @@ const updateBranding = async (req, res) => {
       return res.status(400).json({ error: 'Không có trường nào được cập nhật' });
     }
 
-    // Upsert
-    const { data: existing } = await supabaseAdmin
+    // Upsert atomic — tránh race condition gây duplicate key
+    const result = await supabaseAdmin
       .from('branch_branding')
-      .select('id')
-      .eq('branch_id', branchId)
-      .maybeSingle();
+      .upsert(
+        { branch_id: branchId, store_name: updates.store_name || 'Cửa hàng', ...updates },
+        { onConflict: 'branch_id' }
+      )
+      .select('*')
+      .single();
 
-    let data;
-    if (existing) {
-      const result = await supabaseAdmin
-        .from('branch_branding')
-        .update(updates)
-        .eq('branch_id', branchId)
-        .select('*')
-        .single();
-      data = result.data;
-      if (result.error) return res.status(400).json({ error: result.error.message });
-    } else {
-      const result = await supabaseAdmin
-        .from('branch_branding')
-        .insert([{ branch_id: branchId, store_name: updates.store_name || 'Cửa hàng', ...updates }])
-        .select('*')
-        .single();
-      data = result.data;
-      if (result.error) return res.status(400).json({ error: result.error.message });
-    }
+    if (result.error) return res.status(400).json({ error: result.error.message });
+    const data = result.data;
 
     res.json({ message: 'Đã cập nhật branding', data });
   } catch (err) {

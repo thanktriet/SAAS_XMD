@@ -18,8 +18,14 @@
     },
     "files": [
       "main.js",
-      "preload.js",
-      "../frontend/dist/**/*"
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/dist",
+        "to": "frontend/dist",
+        "filter": ["**/*"]
+      }
     ],
     "extraMetadata": {
       "main": "main.js"
@@ -43,7 +49,7 @@
       "provider": "github",
       "owner": "thanktriet",
       "repo": "SAAS_XMD",
-      "releaseType": "release"
+      "releaseType": "draft"
     }
   },
   "devDependencies": {

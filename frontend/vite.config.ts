@@ -4,7 +4,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.ELECTRON === '1' ? './' : '/',
+  base: (process.env.ELECTRON === '1' || process.env.TAURI === '1') ? './' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

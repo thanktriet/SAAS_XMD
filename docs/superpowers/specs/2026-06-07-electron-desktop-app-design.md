@@ -110,7 +110,7 @@ base: process.env.ELECTRON ? './' : '/'
 ### Biến môi trường
 | Biến | Giá trị |
 |------|---------|
-| `VITE_API_URL` | URL API production (VPS) |
+| `VITE_API_URL` | `http://14.225.198.127:8088/api` |
 | `ELECTRON` | `1` khi build cho Electron |
 
 ---

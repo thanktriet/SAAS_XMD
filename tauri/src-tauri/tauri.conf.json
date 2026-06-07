@@ -1,0 +1,36 @@
+{
+  "productName": "XMĐ ERP",
+  "version": "1.0.0",
+  "identifier": "com.xmd.erp",
+  "build": {
+    "beforeBuildCommand": "cd ../frontend && npm run build:tauri",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "XMĐ ERP",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "windows": {
+      "nsis": {
+        "languages": ["Vietnamese"],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

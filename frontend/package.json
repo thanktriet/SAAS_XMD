@@ -9,7 +9,7 @@
     "build:gh-pages": "tsc -b && vite build --base=/ERP_XM-/ && node scripts/copy-spa-404.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:electron": "cross-env ELECTRON=1 VITE_API_BASE_URL=http://14.225.198.127:5050/api tsc -b && cross-env ELECTRON=1 VITE_API_BASE_URL=http://14.225.198.127:5050/api vite build"
+    "build:electron": "cross-env ELECTRON=1 VITE_API_BASE_URL=http://14.225.198.127:8088/api tsc -b && cross-env ELECTRON=1 VITE_API_BASE_URL=http://14.225.198.127:8088/api vite build"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.64.2",

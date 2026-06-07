@@ -38,7 +38,7 @@ const corsOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin || origin === 'null') return callback(null, true);
     if (corsOrigins.includes(origin)) return callback(null, true);
     return callback(null, false);
   },

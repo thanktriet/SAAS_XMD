@@ -110,13 +110,13 @@ function createTray() {
   tray.setToolTip('XMĐ ERP');
 
   const menu = Menu.buildFromTemplate([
-    { label: 'Mở XMĐ ERP', click: () => { mainWindow.show(); mainWindow.focus(); } },
+    { label: 'Mở XMĐ ERP', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); } } },
     { type: 'separator' },
     { label: 'Thoát', click: () => { app.isQuitting = true; app.quit(); } },
   ]);
 
   tray.setContextMenu(menu);
-  tray.on('double-click', () => { mainWindow.show(); mainWindow.focus(); });
+  tray.on('double-click', () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); } });
 }
 
 function checkForUpdates() {

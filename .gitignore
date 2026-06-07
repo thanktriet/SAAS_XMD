@@ -36,3 +36,11 @@ pgdata/
 
 nul
 frontend/nul
+
+# Electron
+electron/dist/
+electron/node_modules/
+frontend/.env.electron
+
+# Superpowers
+.superpowers/

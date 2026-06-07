@@ -3,10 +3,6 @@ name = "xmd-erp"
 version = "1.0.0"
 edition = "2021"
 
-[lib]
-name = "xmd_erp_lib"
-crate-type = ["lib", "cdylib", "staticlib"]
-
 [[bin]]
 name = "xmd-erp"
 path = "src/main.rs"

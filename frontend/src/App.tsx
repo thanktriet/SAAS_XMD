@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useEffect, lazy, Suspense } from 'react';
@@ -50,9 +50,12 @@ const qc = new QueryClient({
 /** GitHub Pages: app nằm dưới /<tên-repo>/ — basename khớp Vite `base` */
 function routerBasename(): string | undefined {
   const b = import.meta.env.BASE_URL;
-  if (b === '/') return undefined;
+  if (b === '/' || b === './') return undefined;
   return b.endsWith('/') ? b.slice(0, -1) : b;
 }
+
+// Electron dùng file:// protocol — phải dùng HashRouter thay BrowserRouter
+const Router = import.meta.env.BASE_URL === './' ? HashRouter : BrowserRouter;
 
 // Guard: kiểm tra đăng nhập — chờ init() xong rồi mới quyết định redirect
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -74,7 +77,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={qc}>
-      <BrowserRouter basename={routerBasename()}>
+      <Router basename={routerBasename()}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -108,7 +111,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
+      </Router>
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
     </QueryClientProvider>
   );

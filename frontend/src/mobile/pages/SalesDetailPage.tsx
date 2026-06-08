@@ -188,8 +188,8 @@ export default function SalesDetailPage() {
   const accessories = order.sales_order_accessories ?? [];
   const services = order.sales_order_services ?? [];
   const promotions = order.sales_order_promotions ?? [];
-  const paymentList = Array.isArray(payments) ? payments : payments?.data ?? [];
-  const totalPaid = paymentList.reduce((s: number, p: any) => s + (p.amount || 0), 0);
+  const paymentList = Array.isArray(payments) ? payments : (payments?.payments ?? payments?.data ?? []);
+  const totalPaid = paymentList.filter((p: any) => p.status === 'confirmed').reduce((s: number, p: any) => s + (p.amount || 0), 0);
   const remaining = Math.max(0, (order.total_amount || 0) - totalPaid);
 
   const actions = getAllowedActions(order.status, user?.role || '');

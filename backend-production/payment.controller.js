@@ -7,7 +7,7 @@ function getDb(req) { return req.db || supabaseAdmin; }
 // ════════════════════════════════════════════════════════════════
 //  HELPER: tính tổng đã thu (confirmed) và cập nhật status đơn
 // ════════════════════════════════════════════════════════════════
-async function recalcOrderStatus(orderId) {
+async function recalcOrderStatus(orderId, req) {
   // Tổng đã xác nhận
   const { data: rows } = await getDb(req).from('sales_order_payments')
     .select('amount')
@@ -271,7 +271,7 @@ const confirmPayment = async (req, res) => {
       .eq('id', paymentId);
 
     // Tự động cập nhật status đơn hàng
-    const { totalPaid, remaining, newStatus } = await recalcOrderStatus(orderId);
+    const { totalPaid, remaining, newStatus } = await recalcOrderStatus(orderId, req);
 
     res.json({
       payment: updated,
@@ -340,7 +340,7 @@ const cancelPayment = async (req, res) => {
       .eq('id', paymentId);
 
     // Cập nhật lại status đơn
-    await recalcOrderStatus(orderId);
+    await recalcOrderStatus(orderId, req);
 
     res.json({ message: 'Đã huỷ thanh toán' });
   } catch (err) {

@@ -7,12 +7,18 @@ import { cacheCustomers, searchCachedCustomers, type CachedCustomer } from '../s
 import type { Customer, PaginatedResponse } from '../../types';
 
 const LIMIT = 20;
+const FILTER_OPTIONS = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'individual', label: 'Cá nhân' },
+  { key: 'business', label: 'Doanh nghiệp' },
+];
 
 export default function CustomersPage() {
   const navigate = useNavigate();
   const isOnline = useNetworkStatus();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filter, setFilter] = useState('all');
   const [offlineResults, setOfflineResults] = useState<CachedCustomer[]>([]);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -30,11 +36,12 @@ export default function CustomersPage() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery<PaginatedResponse<Customer>>({
-    queryKey: ['m-customers', debouncedSearch],
+    queryKey: ['m-customers', debouncedSearch, filter],
     queryFn: ({ pageParam = 1 }) =>
       api.get('/customers', {
         params: {
           search: debouncedSearch || undefined,
+          customer_type: filter !== 'all' ? filter : undefined,
           page: pageParam,
           limit: LIMIT,
         },
@@ -99,6 +106,19 @@ export default function CustomersPage() {
         />
       </div>
 
+      {/* Filter chips */}
+      <div className="m-filter-chips">
+        {FILTER_OPTIONS.map(opt => (
+          <button
+            key={opt.key}
+            className={`m-chip${filter === opt.key ? ' m-chip-active' : ''}`}
+            onClick={() => setFilter(opt.key)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       <p className="m-list-count">
         {total} khách hàng
         {!isOnline && ' (offline)'}
@@ -116,7 +136,7 @@ export default function CustomersPage() {
         </div>
       ) : (
         <div className="m-customer-list">
-          {customers.map((c, idx) => (
+          {customers.map((c: any, idx: number) => (
             <div
               key={c.id}
               className="m-customer-item"
@@ -127,8 +147,20 @@ export default function CustomersPage() {
                 {c.full_name?.charAt(0)?.toUpperCase() || '?'}
               </div>
               <div className="m-customer-info">
-                <strong>{c.full_name}</strong>
-                <span>{c.phone}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <strong>{c.full_name}</strong>
+                  {c.customer_type && (
+                    <span className={`m-customer-type-badge${c.customer_type === 'business' ? ' business' : ''}`}>
+                      {c.customer_type === 'business' ? 'DN' : 'CN'}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{c.phone}</span>
+                  {c.loyalty_points > 0 && (
+                    <span className="m-customer-points">⭐ {c.loyalty_points}</span>
+                  )}
+                </div>
               </div>
               <span className="m-customer-arrow">›</span>
             </div>
@@ -141,6 +173,17 @@ export default function CustomersPage() {
           )}
         </div>
       )}
+
+      {/* FAB — Tạo khách hàng mới */}
+      <button
+        className="m-fab"
+        onClick={() => navigate('/m/customers/new')}
+        aria-label="Tạo khách hàng mới"
+        style={{ bottom: 'calc(var(--m-nav-height) + var(--m-safe-bottom) + 16px)' }}
+      >
+        <span className="m-fab-icon">＋</span>
+        <span className="m-fab-label">Thêm KH</span>
+      </button>
     </div>
   );
 }

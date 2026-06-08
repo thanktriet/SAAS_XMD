@@ -14,6 +14,7 @@ const SalesNewPage       = lazy(() => import('./pages/SalesNewPage'));
 const SalesDetailPage    = lazy(() => import('./pages/SalesDetailPage'));
 const CustomersPage      = lazy(() => import('./pages/CustomersPage'));
 const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage'));
+const CustomerFormPage   = lazy(() => import('./pages/CustomerFormPage'));
 const NotificationsPage  = lazy(() => import('./pages/NotificationsPage'));
 
 // ─── Loading fallback ────────────────────────────────────────────────────────
@@ -52,7 +53,9 @@ export default function App() {
               <Route path="sales/new" element={<SalesNewPage />} />
               <Route path="sales/:id" element={<SalesDetailPage />} />
               <Route path="customers" element={<CustomersPage />} />
+              <Route path="customers/new" element={<CustomerFormPage />} />
               <Route path="customers/:id" element={<CustomerDetailPage />} />
+              <Route path="customers/:id/edit" element={<CustomerFormPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/m" replace />} />

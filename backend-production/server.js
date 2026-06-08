@@ -26,6 +26,7 @@ const webhookRoutes        = require('./webhook.routes');
 const paymentRoutes        = require('./payment.routes');
 const brandingRoutes       = require('./branding.routes');
 const licenseRoutes        = require('./license.routes');
+const notificationRoutes   = require('./notification.routes');
 const { errorHandler, notFoundHandler } = require('./error.middleware');
 
 const app = express();
@@ -84,6 +85,8 @@ app.use('/api/cash-advances', cashAdvanceRoutes);
 app.use('/api/cash-deposits', cashDepositRoutes);
 app.use('/api/branding',      brandingRoutes);
 app.use('/api/license',       licenseRoutes);
+app.use('/api/push',          notificationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Webhook — đặt TRƯỚC notFoundHandler, KHÔNG cần JWT (SEPay gửi API Key riêng)
 app.use('/api/webhooks',        webhookRoutes);

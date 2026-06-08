@@ -41,7 +41,7 @@ export default function CustomersPage() {
       }).then(r => {
         // Cache results for offline use
         const customers = r.data?.data ?? [];
-        cacheCustomers(customers.map(c => ({
+        cacheCustomers(customers.map((c: Customer) => ({
           id: c.id,
           full_name: c.full_name,
           phone: c.phone,

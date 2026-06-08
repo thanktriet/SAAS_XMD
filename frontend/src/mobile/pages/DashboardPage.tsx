@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-import { formatCurrency, formatDate, ORDER_STATUS } from '../../utils/helpers';
+import { formatCurrency, ORDER_STATUS } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import type { SalesOrder } from '../../types';
 

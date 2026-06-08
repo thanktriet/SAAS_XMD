@@ -101,8 +101,9 @@ export default function SalesNewPage() {
     [inventory, colorChon]
   );
 
+  // Không tự động chọn xe đầu tiên — người dùng phải chọn VIN
   useEffect(() => {
-    if (vehiclesForColor.length > 0) setVehicle(vehiclesForColor[0]);
+    if (vehiclesForColor.length === 1) setVehicle(vehiclesForColor[0]);
     else setVehicle(null);
   }, [vehiclesForColor]);
 
@@ -355,17 +356,48 @@ export default function SalesNewPage() {
                       <div
                         key={color}
                         className={`m-color-item${colorChon === color ? ' selected' : ''}`}
-                        onClick={() => setColorChon(color)}
+                        onClick={() => { setColorChon(color); setVehicle(null); }}
                       >
                         <div className="m-color-dot" />
                         <div className="m-color-name">{color}</div>
                         <div className="m-color-count">{count} xe</div>
-                        {colorChon === color && vehicle && (
-                          <div className="m-color-vin">VIN: ...{vehicle.vin?.slice(-6)}</div>
-                        )}
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Chọn VIN cụ thể */}
+              {colorChon && vehiclesForColor.length > 1 && (
+                <>
+                  <h3 className="m-section-title" style={{ marginTop: 20 }}>Chọn xe (VIN)</h3>
+                  <div className="m-color-list">
+                    {vehiclesForColor.map(v => (
+                      <div
+                        key={v.id}
+                        className={`m-color-item${vehicle?.id === v.id ? ' selected' : ''}`}
+                        onClick={() => setVehicle(v)}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div className="m-color-name" style={{ fontSize: 13 }}>
+                            VIN: {v.vin || '—'}
+                          </div>
+                          {v.engine_number && (
+                            <div className="m-color-vin">Số máy: {v.engine_number}</div>
+                          )}
+                        </div>
+                        {vehicle?.id === v.id && <span style={{ color: 'var(--m-primary)', fontWeight: 700 }}>✓</span>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {colorChon && vehiclesForColor.length === 1 && vehicle && (
+                <div className="m-card" style={{ marginTop: 12 }}>
+                  <div className="m-info-row">
+                    <span>VIN</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{vehicle.vin || '—'}</span>
+                  </div>
                 </div>
               )}
             </>

@@ -136,8 +136,8 @@ export default function SalesNewPage() {
   };
 
   // ─── Computed ───────────────────────────────────────────────────────────────
-  const vehiclePrice = vehicle?.vehicle_models?.price_sell || 0;
-  const accTotal = cartAccessories.reduce((s, i) => s + i.accessory.price_sell * i.quantity, 0);
+  const vehiclePrice = Number(vehicle?.vehicle_models?.price_sell) || 0;
+  const accTotal = cartAccessories.reduce((s, i) => s + (Number(i.accessory.price_sell) || 0) * i.quantity, 0);
   const total = vehiclePrice + accTotal;
 
   return (
@@ -265,7 +265,7 @@ export default function SalesNewPage() {
                 </div>
                 <div className="m-vehicle-color">{v.color || '—'}</div>
                 <div className="m-vehicle-price">
-                  {formatCurrency(v.vehicle_models?.price_sell || 0)}
+                  {formatCurrency(Number(v.vehicle_models?.price_sell) || 0)}
                 </div>
                 {v.vin && <div className="m-vehicle-vin">VIN: ...{v.vin.slice(-6)}</div>}
               </div>

@@ -570,7 +570,7 @@ const getOrders = async (req, res) => {
         sales_order_items(
           quantity,
           vehicle_models(brand, model_name),
-          inventory_vehicles(color)
+          inventory_vehicles(vin, color)
         )
       `, { count: 'exact' })
       .order('order_date', { ascending: false })

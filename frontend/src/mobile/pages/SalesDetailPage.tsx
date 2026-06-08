@@ -146,7 +146,13 @@ export default function SalesDetailPage() {
   }
 
   function handlePrint() {
-    window.open(`/print-order.html?id=${id}`, '_blank');
+    // Lưu order data vào sessionStorage để print-order.html đọc
+    const printData = {
+      ...order,
+      payments: paymentList,
+    };
+    sessionStorage.setItem('print_order', JSON.stringify(printData));
+    window.open('/print-order.html', '_blank');
   }
 
   if (isLoading) {
@@ -307,16 +313,23 @@ export default function SalesDetailPage() {
           {promotions.map((promo: any, idx: number) => (
             <div key={idx} className="m-product-item">
               <div>
-                <span className="m-product-name">{promo.promotions?.name || promo.name}</span>
-                {promo.promotions?.type && (
+                <span className="m-product-name">{promo.promo_name || promo.name || '—'}</span>
+                {promo.promo_type && (
                   <span className="m-badge" style={{ marginLeft: 6, fontSize: 10 }}>
-                    {promo.promotions.type === 'percentage' ? '%' : promo.promotions.type === 'fixed' ? 'Cố định' : 'Quà'}
+                    {promo.promo_type === 'percent' ? 'Giảm %' : promo.promo_type === 'fixed' ? 'Giảm tiền' : 'Quà tặng'}
+                  </span>
+                )}
+                {promo.promo_type === 'gift' && promo.gift_item_name && (
+                  <span style={{ display: 'block', fontSize: 12, color: '#6d28d9', marginTop: 2 }}>
+                    🎁 {promo.gift_item_name}{promo.gift_quantity > 1 ? ` ×${promo.gift_quantity}` : ''}
                   </span>
                 )}
               </div>
-              <span style={{ color: '#16a34a', fontWeight: 700 }}>
-                -{formatCurrency(promo.discount_amount || promo.amount || 0)}
-              </span>
+              {(promo.discount_amount || 0) > 0 && (
+                <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                  -{formatCurrency(promo.discount_amount)}
+                </span>
+              )}
             </div>
           ))}
         </div>

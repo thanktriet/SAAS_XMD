@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
-import { useAuthStore } from '../../store/authStore';
 import type { Customer, InventoryVehicle, Accessory } from '../../types';
 import toast from 'react-hot-toast';
 
@@ -17,7 +16,6 @@ interface CartAccessoryItem {
 export default function SalesNewPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { user } = useAuthStore();
   const [step, setStep] = useState(1);
 
   // Step 1: Customer
@@ -138,7 +136,7 @@ export default function SalesNewPage() {
   };
 
   // ─── Computed ───────────────────────────────────────────────────────────────
-  const vehiclePrice = vehicle?.price_sell || vehicle?.vehicle_models?.price_sell || 0;
+  const vehiclePrice = vehicle?.vehicle_models?.price_sell || 0;
   const accTotal = cartAccessories.reduce((s, i) => s + i.accessory.price_sell * i.quantity, 0);
   const total = vehiclePrice + accTotal;
 
@@ -267,7 +265,7 @@ export default function SalesNewPage() {
                 </div>
                 <div className="m-vehicle-color">{v.color || '—'}</div>
                 <div className="m-vehicle-price">
-                  {formatCurrency(v.price_sell || v.vehicle_models?.price_sell || 0)}
+                  {formatCurrency(v.vehicle_models?.price_sell || 0)}
                 </div>
                 {v.vin && <div className="m-vehicle-vin">VIN: ...{v.vin.slice(-6)}</div>}
               </div>

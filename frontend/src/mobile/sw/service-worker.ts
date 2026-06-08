@@ -1,7 +1,5 @@
 /// <reference lib="webworker" />
 
-const SW_VERSION = '1.0.0';
-
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // Install: activate immediately

@@ -81,19 +81,19 @@ export default function CustomerFormPage() {
         gender: existing.gender || '',
         source: existing.source || '',
         date_of_birth: existing.date_of_birth?.slice(0, 10) || '',
-        id_number: existing.id_number || '',
-        id_issued_date: existing.id_issued_date?.slice(0, 10) || '',
-        id_issued_place: existing.id_issued_place || '',
+        id_number: existing.id_card || '',
+        id_issued_date: existing.id_card_date?.slice(0, 10) || '',
+        id_issued_place: existing.id_card_place || '',
         address: existing.address || '',
         district: existing.district || '',
-        city: existing.city || '',
+        city: existing.province || '',
         company_name: existing.company_name || '',
         tax_code: existing.tax_code || '',
         representative_name: existing.representative_name || '',
         representative_title: existing.representative_title || '',
         invoice_address: existing.invoice_address || '',
         invoice_district: existing.invoice_district || '',
-        invoice_city: existing.invoice_city || '',
+        invoice_city: existing.invoice_province || '',
         show_invoice_address: !!(existing.invoice_address),
         notes: existing.notes || '',
       });
@@ -101,12 +101,7 @@ export default function CustomerFormPage() {
   }, [existing]);
 
   const saveMut = useMutation({
-    mutationFn: (data: Partial<FormData>) => {
-      const payload = { ...data };
-      delete (payload as any).show_invoice_address;
-      if (!payload.show_invoice_address) {
-        // already deleted above
-      }
+    mutationFn: (payload: Record<string, any>) => {
       if (isEdit) {
         return api.put(`/customers/${id}`, payload).then(r => r.data);
       }
@@ -142,11 +137,20 @@ export default function CustomerFormPage() {
 
   function handleSubmit() {
     if (!validate()) return;
-    const { show_invoice_address, ...payload } = form;
+    const { show_invoice_address, id_number, id_issued_date, id_issued_place, city, invoice_city, ...rest } = form;
+    // Map form fields to API fields
+    const payload: Record<string, any> = {
+      ...rest,
+      id_card: id_number,
+      id_card_date: id_issued_date,
+      id_card_place: id_issued_place,
+      province: city,
+      invoice_province: invoice_city,
+    };
     if (!show_invoice_address) {
       payload.invoice_address = '';
       payload.invoice_district = '';
-      payload.invoice_city = '';
+      payload.invoice_province = '';
     }
     saveMut.mutate(payload);
   }

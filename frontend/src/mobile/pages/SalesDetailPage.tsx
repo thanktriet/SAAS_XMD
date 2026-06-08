@@ -1,8 +1,8 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../../services/api';
-import { formatCurrency, formatDate, formatDateTime, ORDER_STATUS, PAYMENT_METHOD, getAllowedActions } from '../../utils/helpers';
+import { formatCurrency, formatDate, ORDER_STATUS, PAYMENT_METHOD, getAllowedActions } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 import StatusProgressBar from '../components/ui/StatusProgressBar';
@@ -11,7 +11,6 @@ import type { ActionDef } from '../../utils/helpers';
 
 export default function SalesDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuthStore();
 

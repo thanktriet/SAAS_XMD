@@ -114,22 +114,22 @@ export default function CustomerDetailPage() {
             <span>{data_.source}</span>
           </div>
         )}
-        {data_.id_number && (
+        {data_.id_card && (
           <div className="m-info-row">
             <span>CMND/CCCD</span>
-            <span>{data_.id_number}</span>
+            <span>{data_.id_card}</span>
           </div>
         )}
-        {data_.id_issued_date && (
+        {data_.id_card_date && (
           <div className="m-info-row">
             <span>Ngày cấp</span>
-            <span>{formatDate(data_.id_issued_date)}</span>
+            <span>{formatDate(data_.id_card_date)}</span>
           </div>
         )}
-        {data_.id_issued_place && (
+        {data_.id_card_place && (
           <div className="m-info-row">
             <span>Nơi cấp</span>
-            <span>{data_.id_issued_place}</span>
+            <span>{data_.id_card_place}</span>
           </div>
         )}
       </div>
@@ -172,13 +172,13 @@ export default function CustomerDetailPage() {
           {data_.address && (
             <div className="m-info-row">
               <span>Giao hàng</span>
-              <span>{data_.address}{data_.district ? `, ${data_.district}` : ''}{data_.city ? `, ${data_.city}` : ''}</span>
+              <span>{data_.address}{data_.district ? `, ${data_.district}` : ''}{data_.province ? `, ${data_.province}` : ''}</span>
             </div>
           )}
           {data_.invoice_address && (
             <div className="m-info-row">
               <span>Hoá đơn</span>
-              <span>{data_.invoice_address}{data_.invoice_district ? `, ${data_.invoice_district}` : ''}{data_.invoice_city ? `, ${data_.invoice_city}` : ''}</span>
+              <span>{data_.invoice_address}{data_.invoice_district ? `, ${data_.invoice_district}` : ''}{data_.invoice_province ? `, ${data_.invoice_province}` : ''}</span>
             </div>
           )}
         </div>

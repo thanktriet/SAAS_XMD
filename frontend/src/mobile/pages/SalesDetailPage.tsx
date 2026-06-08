@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../../services/api';
@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 
 export default function SalesDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuthStore();
 

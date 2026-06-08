@@ -26,7 +26,6 @@ export default function SalesListPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -40,7 +39,6 @@ export default function SalesListPage() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    refetch,
   } = useInfiniteQuery<PaginatedResponse<SalesOrder>>({
     queryKey: ['m-sales', status, debouncedSearch],
     queryFn: ({ pageParam = 1 }) =>
@@ -85,9 +83,6 @@ export default function SalesListPage() {
       setSearchParams({});
     }
   };
-
-  // Pull to refresh
-  const handleRefresh = () => refetch();
 
   return (
     <div className="m-page">

@@ -21,9 +21,10 @@ export default function MobileLayout() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Hide global FAB on pages that have their own FAB or form pages
+  // Hide global FAB on pages that have their own action bar or form
   const hideFAB = location.pathname.includes('/m/sales/new') ||
-    location.pathname.includes('/m/customers');
+    location.pathname.includes('/m/customers') ||
+    /\/m\/sales\/[^/]+$/.test(location.pathname); // sales detail has its own action bar
 
   return (
     <div className="m-shell">

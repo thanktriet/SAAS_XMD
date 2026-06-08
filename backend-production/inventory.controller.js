@@ -15,7 +15,7 @@ const getInventory = async (req, res) => {
       .order('created_at', { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
-    if (status) query = query.eq('status', status);
+    if (status) { if (status.includes(',')) { query = query.in('status', status.split(',')); } else { query = query.eq('status', status); } }
     if (model_id) query = query.eq('vehicle_model_id', model_id);
     if (color) query = query.ilike('color', `%${color}%`);
 

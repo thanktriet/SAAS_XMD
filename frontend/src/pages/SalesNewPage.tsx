@@ -127,8 +127,8 @@ export default function SalesNewPage() {
 
   // Tất cả xe tồn kho của model đang chọn
   const { data: dsVehicleAll, isLoading: loadingVehicle } = useQuery<{ data: InventoryVehicle[] }>({
-    queryKey: ['inventory-model', modelId],
-    queryFn: () => api.get('/inventory', { params: { model_id: modelId, status: 'in_stock', limit: 200 } }).then(r => r.data),
+    queryKey: ['inventory-model', modelId, isEditMode],
+    queryFn: () => api.get('/inventory', { params: { model_id: modelId, status: isEditMode ? 'in_stock,reserved' : 'in_stock', limit: 200 } }).then(r => r.data),
     enabled: !!modelId,
   });
 

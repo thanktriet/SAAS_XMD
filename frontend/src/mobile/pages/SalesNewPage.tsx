@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
-import type { Customer, InventoryVehicle, Accessory } from '../../types';
+import type { Customer, InventoryVehicle, Accessory, Promotion } from '../../types';
 import toast from 'react-hot-toast';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,9 +24,10 @@ export default function SalesNewPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ full_name: '', phone: '', address: '' });
 
-  // Step 2: Vehicle + Accessories
+  // Step 2: Vehicle + Accessories + Promotions
   const [vehicle, setVehicle] = useState<InventoryVehicle | null>(null);
   const [cartAccessories, setCartAccessories] = useState<CartAccessoryItem[]>([]);
+  const [selectedPromos, setSelectedPromos] = useState<Set<string>>(new Set());
 
   // Step 3: Payment
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'installment'>('cash');
@@ -53,6 +54,17 @@ export default function SalesNewPage() {
     enabled: step >= 2,
   });
   const accessories: Accessory[] = accessoriesResult?.data ?? [];
+
+  // Promotions (active, optionally filtered by model)
+  const modelId = vehicle?.vehicle_model_id;
+  const { data: promotionsResult } = useQuery({
+    queryKey: ['m-promotions', modelId],
+    queryFn: () => api.get('/promotions/active', { params: { model_id: modelId || undefined } }).then(r => r.data),
+    enabled: step >= 2,
+  });
+  const promotions: Promotion[] = (promotionsResult?.data ?? promotionsResult ?? []).filter(
+    (p: Promotion) => p.is_active && (p.promo_type === 'percent' || p.promo_type === 'fixed' || p.promo_type === 'gift')
+  );
 
   // ─── Create order mutation ──────────────────────────────────────────────────
   const createMut = useMutation({
@@ -95,6 +107,8 @@ export default function SalesNewPage() {
 
   const handleSelectVehicle = (v: InventoryVehicle) => {
     setVehicle(v === vehicle ? null : v);
+    // Reset promos when vehicle changes
+    setSelectedPromos(new Set());
   };
 
   const handleAddAccessory = (acc: Accessory) => {
@@ -111,6 +125,15 @@ export default function SalesNewPage() {
     setCartAccessories(prev => prev.filter(i => i.accessory.id !== accId));
   };
 
+  const handleTogglePromo = (promoId: string) => {
+    setSelectedPromos(prev => {
+      const next = new Set(prev);
+      if (next.has(promoId)) next.delete(promoId);
+      else next.add(promoId);
+      return next;
+    });
+  };
+
   const handleSubmit = () => {
     if (!customer || !vehicle) {
       toast.error('Vui lòng chọn khách hàng và xe');
@@ -121,6 +144,7 @@ export default function SalesNewPage() {
       customer_id: customer.id,
       payment_method: paymentMethod,
       deposit_amount: depositAmount ? Number(depositAmount.replace(/[,.]/g, '')) : 0,
+      discount_amount: Math.abs(totalDiscount),
       items: [{
         inventory_vehicle_id: vehicle.id,
         quantity: 1,
@@ -130,6 +154,14 @@ export default function SalesNewPage() {
         quantity: ca.quantity,
         unit_price: ca.accessory.price_sell,
       })),
+      promotions: promotions
+        .filter(p => selectedPromos.has(p.id))
+        .map(p => ({
+          promotion_id: p.id,
+          promo_type: p.promo_type,
+          discount_percent: p.discount_percent || 0,
+          discount_amount: calcPromoDiscount(p),
+        })),
     };
 
     createMut.mutate(payload);
@@ -138,7 +170,33 @@ export default function SalesNewPage() {
   // ─── Computed ───────────────────────────────────────────────────────────────
   const vehiclePrice = Number(vehicle?.vehicle_models?.price_sell) || 0;
   const accTotal = cartAccessories.reduce((s, i) => s + (Number(i.accessory.price_sell) || 0) * i.quantity, 0);
-  const total = vehiclePrice + accTotal;
+
+  // Calculate discount for a single promotion
+  function calcPromoDiscount(promo: Promotion): number {
+    const appliesTo = promo.applies_to ?? 'vehicle';
+    let base = 0;
+    if (appliesTo === 'vehicle') base = vehiclePrice;
+    else if (appliesTo === 'accessory') base = accTotal;
+    else base = vehiclePrice + accTotal;
+
+    if (promo.promo_type === 'percent') {
+      const raw = base * (Number(promo.discount_percent) || 0) / 100;
+      return promo.max_discount_cap ? Math.min(raw, promo.max_discount_cap) : raw;
+    }
+    if (promo.promo_type === 'fixed') {
+      return Math.min(Number(promo.discount_amount) || 0, base);
+    }
+    return 0;
+  }
+
+  const totalDiscount = useMemo(() => {
+    return promotions
+      .filter(p => selectedPromos.has(p.id) && (p.promo_type === 'percent' || p.promo_type === 'fixed'))
+      .reduce((s, p) => s + calcPromoDiscount(p), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPromos, vehiclePrice, accTotal, promotions]);
+
+  const total = Math.max(0, vehiclePrice + accTotal - totalDiscount);
 
   return (
     <div className="m-page m-wizard">
@@ -249,7 +307,7 @@ export default function SalesNewPage() {
         </div>
       )}
 
-      {/* ═══ Step 2: Chọn xe + phụ kiện ═══ */}
+      {/* ═══ Step 2: Chọn xe + phụ kiện + khuyến mãi ═══ */}
       {step === 2 && (
         <div className="m-wizard-content">
           <h3 className="m-section-title">Chọn xe</h3>
@@ -307,11 +365,51 @@ export default function SalesNewPage() {
             })}
           </div>
 
+          {/* Promotions / Khuyến mãi */}
+          {promotions.length > 0 && (
+            <>
+              <h3 className="m-section-title" style={{ marginTop: 20 }}>🎉 Khuyến mãi</h3>
+              <div className="m-promo-list">
+                {promotions.map(promo => {
+                  const isSelected = selectedPromos.has(promo.id);
+                  const discountVal = calcPromoDiscount(promo);
+                  return (
+                    <div
+                      key={promo.id}
+                      className={`m-promo-item${isSelected ? ' selected' : ''}`}
+                      onClick={() => handleTogglePromo(promo.id)}
+                    >
+                      <div className="m-promo-check">
+                        {isSelected ? '✓' : ''}
+                      </div>
+                      <div className="m-promo-info">
+                        <strong>{promo.name}</strong>
+                        <span>
+                          {promo.promo_type === 'percent'
+                            ? `Giảm ${promo.discount_percent}%${promo.max_discount_cap ? ` (tối đa ${formatCurrency(promo.max_discount_cap)})` : ''}`
+                            : promo.promo_type === 'fixed'
+                            ? `Giảm ${formatCurrency(Number(promo.discount_amount) || 0)}`
+                            : '🎁 Quà tặng'}
+                        </span>
+                      </div>
+                      {discountVal > 0 && (
+                        <span className="m-promo-value">-{formatCurrency(discountVal)}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {/* Summary bar */}
           <div className="m-summary-bar">
             <div>
               <span className="m-summary-label">Tạm tính:</span>
               <strong className="m-summary-total">{formatCurrency(total)}</strong>
+              {totalDiscount > 0 && (
+                <span className="m-summary-discount">(-{formatCurrency(totalDiscount)})</span>
+              )}
             </div>
             <button
               className="m-btn-primary"
@@ -340,10 +438,20 @@ export default function SalesNewPage() {
                 {vehicle?.vehicle_models?.brand} {vehicle?.vehicle_models?.model_name}
               </strong>
             </div>
+            <div className="m-info-row">
+              <span>Giá xe</span>
+              <span>{formatCurrency(vehiclePrice)}</span>
+            </div>
             {cartAccessories.length > 0 && (
               <div className="m-info-row">
-                <span>Phụ kiện</span>
-                <span>{cartAccessories.length} mục</span>
+                <span>Phụ kiện ({cartAccessories.length})</span>
+                <span>{formatCurrency(accTotal)}</span>
+              </div>
+            )}
+            {totalDiscount > 0 && (
+              <div className="m-info-row">
+                <span>Khuyến mãi</span>
+                <span style={{ color: '#16a34a' }}>-{formatCurrency(totalDiscount)}</span>
               </div>
             )}
             <div className="m-divider" />

@@ -1095,6 +1095,77 @@
   display: block;
 }
 
+.m-summary-discount {
+  font-size: 12px;
+  color: #16a34a;
+  margin-left: 6px;
+}
+
+/* ── Promotions List ── */
+.m-promo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.m-promo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--m-card-bg);
+  border: 1.5px solid var(--m-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.m-promo-item.selected {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.m-promo-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--m-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.m-promo-item.selected .m-promo-check {
+  border-color: #16a34a;
+  background: #dcfce7;
+}
+
+.m-promo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m-promo-info strong {
+  font-size: 13px;
+}
+
+.m-promo-info span {
+  font-size: 12px;
+  color: var(--m-text-muted);
+}
+
+.m-promo-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
 /* ── Radio Group ── */
 .m-radio-group {
   display: flex;

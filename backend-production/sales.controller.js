@@ -4,6 +4,7 @@
 function getDb(req) { return req.db || supabaseAdmin; }
 const { awardLoyaltyPoints } = require('./loyalty.service');
 const { validateBatteryItems, createAssignments, isBatteryAccessory } = require('./battery.service');
+const { generateCode } = require('./codeGenerator');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STATE MACHINE — luồng chuyển trạng thái hợp lệ
@@ -228,10 +229,12 @@ async function handleDeliver(orderId, existingDeliveryDate) {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + months);
 
-    const { count } = await getDb(req).from('warranty_records')
-      .select('*', { count: 'exact', head: true });
+    const warranty_number = await generateCode(req, {
+      table: 'warranty_records', column: 'warranty_number',
+      prefix: 'BH', padLength: 6, yearInPrefix: false,
+    });
     await getDb(req).from('warranty_records').insert([{
-      warranty_number:      `BH${String((count || 0) + 1).padStart(6, '0')}`,
+      warranty_number,
       customer_id:          order.customer_id,
       inventory_vehicle_id: item.inventory_vehicle_id,
       sales_order_id:       orderId,
@@ -332,22 +335,11 @@ const createOrder = async (req, res) => {
 
     const total_amount = subtotal - discount_amount + feesTotal + servicesTotal;
 
-    // Sinh mã đơn hàng dựa trên bản ghi mới nhất
-    const { data: lastOrder } = await getDb(req).from('sales_orders')
-      .select('order_number')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    let nextNum = 1;
-    if (lastOrder?.order_number) {
-      const year = new Date().getFullYear();
-      const prefix = `DH${year}`;
-      if (lastOrder.order_number.startsWith(prefix)) {
-        const num = parseInt(lastOrder.order_number.replace(prefix, ''), 10);
-        if (!isNaN(num)) nextNum = num + 1;
-      }
-    }
-    const order_number = `DH${new Date().getFullYear()}${String(nextNum).padStart(5, '0')}`;
+    // Sinh mã đơn hàng có prefix chi nhánh
+    const order_number = await generateCode(req, {
+      table: 'sales_orders', column: 'order_number',
+      prefix: 'DH', padLength: 5, yearInPrefix: true,
+    });
 
     // Tạo đơn — status mặc định là 'draft' để sales xem lại trước khi xác nhận
     const { data: order, error: orderErr } = await getDb(req).from('sales_orders')

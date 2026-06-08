@@ -2,6 +2,7 @@
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
+const { generateCode } = require('./codeGenerator');
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ĐƠN NHẬP HÀNG (Purchase Orders)
@@ -525,12 +526,11 @@ const createSupplier = async (req, res) => {
   try {
     const orgId = '00000000-0000-0000-0000-000000000001';
 
-    // Tự sinh supplier_code: NCC000001
-    const { count } = await getDb(req).from('acc_suppliers')
-      .select('*', { count: 'exact', head: true })
-      .eq('org_id', orgId);
-
-    const supplierCode = `NCC${String((count || 0) + 1).padStart(6, '0')}`;
+    // Tự sinh supplier_code có prefix chi nhánh
+    const supplierCode = await generateCode(req, {
+      table: 'acc_suppliers', column: 'supplier_code',
+      prefix: 'NCC', padLength: 6, yearInPrefix: false,
+    });
 
     const { data, error } = await getDb(req).from('acc_suppliers')
       .insert([{ org_id: orgId, supplier_code: supplierCode, ...req.body }])

@@ -304,22 +304,26 @@ CREATE INDEX IF NOT EXISTS idx_pop_date ON po_payments(payment_date DESC);
 -- TRIGGERS
 -- ═══════════════════════════════════════════════════════════════════════════════
 
--- ─── Trigger 1: Tự sinh po_number ────────────────────────────────────────────
+-- ─── Trigger 1: Tự sinh po_number có prefix chi nhánh ──────────────────────
 CREATE OR REPLACE FUNCTION fn_generate_po_number()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
-  v_year  TEXT;
-  v_month TEXT;
-  v_seq   INT;
+  v_branch_code TEXT;
+  v_prefix      TEXT;
+  v_seq         INT;
 BEGIN
-  v_year  := TO_CHAR(NOW(), 'YYYY');
-  v_month := TO_CHAR(NOW(), 'MM');
+  -- Lấy branch_code, bỏ dấu '-'
+  SELECT REPLACE(branch_code, '-', '') INTO v_branch_code
+  FROM acc_branches WHERE id = NEW.branch_id;
+  v_branch_code := COALESCE(v_branch_code, 'HQ');
+
+  v_prefix := v_branch_code || '-PO' || TO_CHAR(NOW(), 'YYYYMM');
 
   SELECT COUNT(*) + 1 INTO v_seq
   FROM   purchase_orders
-  WHERE  po_number LIKE 'PO' || v_year || v_month || '%';
+  WHERE  po_number LIKE v_prefix || '%';
 
-  NEW.po_number := 'PO' || v_year || v_month || LPAD(v_seq::TEXT, 4, '0');
+  NEW.po_number := v_prefix || LPAD(v_seq::TEXT, 4, '0');
   RETURN NEW;
 END;
 $$;
@@ -332,16 +336,28 @@ CREATE TRIGGER trg_po_number
   EXECUTE FUNCTION fn_generate_po_number();
 
 
--- ─── Trigger 2: Tự sinh receipt_number ───────────────────────────────────────
+-- ─── Trigger 2: Tự sinh receipt_number có prefix chi nhánh ──────────────────
 CREATE OR REPLACE FUNCTION fn_generate_receipt_number()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
-DECLARE v_seq INT;
+DECLARE
+  v_branch_code TEXT;
+  v_prefix      TEXT;
+  v_seq         INT;
 BEGIN
+  -- Lấy branch_code từ purchase_order liên quan
+  SELECT REPLACE(b.branch_code, '-', '') INTO v_branch_code
+  FROM purchase_orders po
+  JOIN acc_branches b ON b.id = po.branch_id
+  WHERE po.id = NEW.purchase_order_id;
+  v_branch_code := COALESCE(v_branch_code, 'HQ');
+
+  v_prefix := v_branch_code || '-PKN' || TO_CHAR(NOW(), 'YYYYMM');
+
   SELECT COUNT(*) + 1 INTO v_seq
   FROM   purchase_receipts
-  WHERE  receipt_number LIKE 'PKN' || TO_CHAR(NOW(), 'YYYYMM') || '%';
+  WHERE  receipt_number LIKE v_prefix || '%';
 
-  NEW.receipt_number := 'PKN' || TO_CHAR(NOW(), 'YYYYMM') || LPAD(v_seq::TEXT, 4, '0');
+  NEW.receipt_number := v_prefix || LPAD(v_seq::TEXT, 4, '0');
   RETURN NEW;
 END;
 $$;
@@ -354,16 +370,28 @@ CREATE TRIGGER trg_receipt_number
   EXECUTE FUNCTION fn_generate_receipt_number();
 
 
--- ─── Trigger 3: Tự sinh payment_number ───────────────────────────────────────
+-- ─── Trigger 3: Tự sinh payment_number có prefix chi nhánh ─────────────────
 CREATE OR REPLACE FUNCTION fn_generate_po_payment_number()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
-DECLARE v_seq INT;
+DECLARE
+  v_branch_code TEXT;
+  v_prefix      TEXT;
+  v_seq         INT;
 BEGIN
+  -- Lấy branch_code từ purchase_order liên quan
+  SELECT REPLACE(b.branch_code, '-', '') INTO v_branch_code
+  FROM purchase_orders po
+  JOIN acc_branches b ON b.id = po.branch_id
+  WHERE po.id = NEW.purchase_order_id;
+  v_branch_code := COALESCE(v_branch_code, 'HQ');
+
+  v_prefix := v_branch_code || '-TTNCC' || TO_CHAR(NOW(), 'YYYYMM');
+
   SELECT COUNT(*) + 1 INTO v_seq
   FROM   po_payments
-  WHERE  payment_number LIKE 'TTNCC' || TO_CHAR(NOW(), 'YYYYMM') || '%';
+  WHERE  payment_number LIKE v_prefix || '%';
 
-  NEW.payment_number := 'TTNCC' || TO_CHAR(NOW(), 'YYYYMM') || LPAD(v_seq::TEXT, 4, '0');
+  NEW.payment_number := v_prefix || LPAD(v_seq::TEXT, 4, '0');
   RETURN NEW;
 END;
 $$;

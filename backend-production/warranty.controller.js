@@ -2,6 +2,7 @@
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
+const { generateCode } = require('./codeGenerator');
 
 // Danh sách phiếu bảo hành
 const getWarranties = async (req, res) => {
@@ -23,8 +24,10 @@ const getWarranties = async (req, res) => {
 // Tạo phiếu sửa chữa / dịch vụ
 const createServiceRequest = async (req, res) => {
   try {
-    const { count } = await getDb(req).from('service_requests').select('*', { count: 'exact', head: true });
-    const ticket_number = `DV${new Date().getFullYear()}${String(count + 1).padStart(5, '0')}`;
+    const ticket_number = await generateCode(req, {
+      table: 'service_requests', column: 'ticket_number',
+      prefix: 'DV', padLength: 5, yearInPrefix: true,
+    });
     const { data, error } = await getDb(req).from('service_requests')
       .insert([{ ...req.body, ticket_number }])
       .select().single();

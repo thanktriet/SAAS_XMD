@@ -3,24 +3,14 @@
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
 const { awardLoyaltyPoints } = require('./loyalty.service');
+const { generateCode } = require('./codeGenerator');
 
-// Sinh mã phiếu DV mới — DV2026XXXXX dựa trên ticket lớn nhất trong năm
-async function generateTicketCode() {
-  const year = new Date().getFullYear();
-  const prefix = `DV${year}`;
-  const { data: last } = await getDb(req).from('service_tickets')
-    .select('ticket_code')
-    .like('ticket_code', `${prefix}%`)
-    .order('ticket_code', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextNum = 1;
-  if (last?.ticket_code) {
-    const num = parseInt(last.ticket_code.replace(prefix, ''), 10);
-    if (!isNaN(num)) nextNum = num + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+// Sinh mã phiếu DV mới — có prefix chi nhánh
+async function generateTicketCode(req) {
+  return generateCode(req, {
+    table: 'service_tickets', column: 'ticket_code',
+    prefix: 'DV', padLength: 5, yearInPrefix: true,
+  });
 }
 
 // ─── Danh sách phiếu DV ───────────────────────────────────────────────────────
@@ -101,7 +91,7 @@ const createServiceTicket = async (req, res) => {
       });
     }
 
-    const ticket_code = await generateTicketCode();
+    const ticket_code = await generateTicketCode(req);
 
     const { data, error } = await getDb(req).from('service_tickets')
       .insert([{

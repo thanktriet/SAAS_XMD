@@ -2,26 +2,16 @@
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
+const { generateCode } = require('./codeGenerator');
 
 const userId = (req) => req.user?.sub || null;
 
-// Sinh mã phiếu PC2026XXXXX
-async function generateAdvanceCode() {
-  const year = new Date().getFullYear();
-  const prefix = `PC${year}`;
-  const { data: last } = await getDb(req).from('cash_advances')
-    .select('advance_code')
-    .like('advance_code', `${prefix}%`)
-    .order('advance_code', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextNum = 1;
-  if (last?.advance_code) {
-    const num = parseInt(last.advance_code.replace(prefix, ''), 10);
-    if (!isNaN(num)) nextNum = num + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+// Sinh mã phiếu tạm ứng — có prefix chi nhánh
+async function generateAdvanceCode(req) {
+  return generateCode(req, {
+    table: 'cash_advances', column: 'advance_code',
+    prefix: 'PC', padLength: 5, yearInPrefix: true,
+  });
 }
 
 // ─── Danh sách ────────────────────────────────────────────────────────────────
@@ -84,7 +74,7 @@ const createAdvance = async (req, res) => {
       return res.status(400).json({ error: 'Số tiền yêu cầu phải > 0' });
     }
 
-    const advance_code = await generateAdvanceCode();
+    const advance_code = await generateAdvanceCode(req);
 
     const { data, error } = await getDb(req).from('cash_advances')
       .insert([{

@@ -2,6 +2,7 @@
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
+const { generateCode } = require('./codeGenerator');
 
 // Các cột kiểu DATE — chuỗi rỗng phải được đổi thành null
 const DATE_FIELDS = ['id_card_date', 'date_of_birth'];
@@ -73,19 +74,11 @@ const getCustomers = async (req, res) => {
 // Thêm khách hàng — tự gán salesperson_id nếu là sales
 const createCustomer = async (req, res) => {
   try {
-    // Lấy mã KH lớn nhất hiện có để tránh trùng khi xóa/thêm đồng thời
-    const { data: lastRow } = await getDb(req).from('customers')
-      .select('customer_code')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let nextNum = 1;
-    if (lastRow?.customer_code) {
-      const num = parseInt(lastRow.customer_code.replace(/^KH/, ''), 10);
-      if (!isNaN(num)) nextNum = num + 1;
-    }
-    const customer_code = `KH${String(nextNum).padStart(6, '0')}`;
+  // Lấy mã KH có prefix chi nhánh
+    const customer_code = await generateCode(req, {
+      table: 'customers', column: 'customer_code',
+      prefix: 'KH', padLength: 6, yearInPrefix: false,
+    });
 
     // Sales: bắt buộc salesperson_id = chính họ; admin/manager: theo body hoặc null
     const body = sanitize(req.body);

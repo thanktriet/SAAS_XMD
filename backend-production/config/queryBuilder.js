@@ -176,17 +176,14 @@ async function getForeignKeys() {
   if (fkCache) return fkCache;
   const result = await pool.query(`
     SELECT
-      tc.table_name AS from_table,
-      kcu.column_name AS from_column,
-      ccu.table_name AS to_table,
-      ccu.column_name AS to_column
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu
-      ON tc.constraint_name = kcu.constraint_name
-    JOIN information_schema.constraint_column_usage ccu
-      ON tc.constraint_name = ccu.constraint_name
-    WHERE tc.constraint_type = 'FOREIGN KEY'
-      AND tc.table_schema = 'public'
+      c.conrelid::regclass::text AS from_table,
+      a.attname AS from_column,
+      c.confrelid::regclass::text AS to_table,
+      af.attname AS to_column
+    FROM pg_constraint c
+    JOIN pg_attribute a ON a.attnum = ANY(c.conkey) AND a.attrelid = c.conrelid
+    JOIN pg_attribute af ON af.attnum = ANY(c.confkey) AND af.attrelid = c.confrelid
+    WHERE c.contype = 'f'
   `);
   fkCache = result.rows;
   return fkCache;

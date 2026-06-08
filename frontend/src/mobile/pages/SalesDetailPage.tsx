@@ -62,7 +62,12 @@ export default function SalesDetailPage() {
 
   const depositMut = useMutation({
     mutationFn: (amount: number) =>
-      api.post(`/sales/${id}/payments`, { amount, payment_type: 'deposit' }).then(r => r.data),
+      api.post(`/sales/${id}/payments`, {
+        payment_method: 'cash',
+        amount,
+        payment_date: new Date().toISOString().slice(0, 10),
+        notes: 'Đặt cọc',
+      }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['m-sales-detail', id] });
       qc.invalidateQueries({ queryKey: ['m-sales-payments', id] });
@@ -76,9 +81,10 @@ export default function SalesDetailPage() {
   const paymentMut = useMutation({
     mutationFn: (data: { receipt_number: string; payment_date: string; note: string }) =>
       api.post(`/sales/${id}/payments`, {
+        payment_method: 'cash',
         amount: remaining,
-        payment_type: 'full_payment',
-        ...data,
+        payment_date: data.payment_date || new Date().toISOString().slice(0, 10),
+        notes: data.note || `Biên lai: ${data.receipt_number}`,
       }).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['m-sales-detail', id] });

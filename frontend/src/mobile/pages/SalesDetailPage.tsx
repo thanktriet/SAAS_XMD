@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../../services/api';
 import { formatCurrency, formatDate, ORDER_STATUS, PAYMENT_METHOD, getAllowedActions } from '../../utils/helpers';
+import { buildSePayQRUrl } from '../../types/accounting';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 import StatusProgressBar from '../components/ui/StatusProgressBar';
@@ -35,6 +36,11 @@ export default function SalesDetailPage() {
     queryKey: ['m-sales-payments', id],
     queryFn: () => api.get(`/sales/${id}/payments`).then(r => r.data),
     enabled: !!id,
+  });
+
+  const { data: paySettings } = useQuery({
+    queryKey: ['m-payment-settings'],
+    queryFn: () => api.get('/settings/payment').then(r => r.data),
   });
 
   const statusMut = useMutation({
@@ -488,6 +494,37 @@ export default function SalesDetailPage() {
         onClose={() => setActiveSheet(null)}
         title="Thu đủ tiền"
       >
+        {/* QR Code thanh toán */}
+        {paySettings?.bank_code && paySettings?.bank_account && (
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <img
+              src={buildSePayQRUrl({
+                bank: paySettings.bank_code,
+                account_number: paySettings.bank_account,
+                amount: remaining,
+                description: order?.order_number || '',
+                template: 'compact2',
+              })}
+              alt="QR thanh toán"
+              style={{ width: 180, height: 180, borderRadius: 8, border: '2px solid var(--m-border)' }}
+            />
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
+              <div><strong>{paySettings.bank_name || paySettings.bank_code}</strong></div>
+              <div>STK: <strong>{paySettings.bank_account}</strong></div>
+              {paySettings.bank_account_name && <div>Chủ TK: {paySettings.bank_account_name}</div>}
+              <div>Nội dung: <strong>{order?.order_number}</strong></div>
+              <div style={{ color: '#1a56db', fontWeight: 700, fontSize: 14, marginTop: 4 }}>
+                {formatCurrency(remaining)}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: '#16a34a', marginTop: 6, padding: '4px 8px', background: '#f0fdf4', borderRadius: 6, display: 'inline-block' }}>
+              ⚡ SEPay tự động đối chiếu sau khi khách chuyển
+            </div>
+          </div>
+        )}
+        <div style={{ borderTop: '1px solid var(--m-border)', paddingTop: 12, marginBottom: 4, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+          Hoặc xác nhận thủ công:
+        </div>
         <div className="m-input-group">
           <label>Số biên lai</label>
           <input

@@ -68,7 +68,7 @@ function canTransition(fromStatus, toStatus, userRole) {
 // TRANSITION HANDLERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-async function handleConfirm(orderId) {
+async function handleConfirm(req, orderId) {
   // Bắt buộc mọi item phải có inventory_vehicle_id (số VIN) trước khi xác nhận đơn
   const { data: items, error: itemsErr } = await getDb(req).from('sales_order_items')
     .select('id, inventory_vehicle_id')
@@ -95,7 +95,7 @@ async function handleConfirm(orderId) {
   return data;
 }
 
-async function handleDepositPaid(orderId, deposit_amount, currentDeposit) {
+async function handleDepositPaid(req, orderId, deposit_amount, currentDeposit) {
   const totalDeposit = (currentDeposit || 0) + parseFloat(deposit_amount);
   const { data, error } = await getDb(req).from('sales_orders')
     .update({ status: 'deposit_paid', deposit_amount: totalDeposit })
@@ -106,7 +106,7 @@ async function handleDepositPaid(orderId, deposit_amount, currentDeposit) {
   return data;
 }
 
-async function handleFullPaid(orderId, { receipt_number, receipt_date, payment_note }, orderData) {
+async function handleFullPaid(req, orderId, { receipt_number, receipt_date, payment_note }, orderData) {
   // Kiểm tra số phiếu thu không trùng
   const { data: existing } = await getDb(req).from('sales_orders')
     .select('id')
@@ -123,11 +123,6 @@ async function handleFullPaid(orderId, { receipt_number, receipt_date, payment_n
   if (error) throw new Error(error.message);
 
   // Sinh giao dịch tài chính — thu đủ tiền
-  const { data: lastFT } = await getDb(req).from('finance_transactions')
-    .select('id')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
   const ftNum = `THU-${orderData.order_number}-${receipt_number}`;
 
   await getDb(req).from('finance_transactions').insert([{
@@ -146,7 +141,7 @@ async function handleFullPaid(orderId, { receipt_number, receipt_date, payment_n
   return order;
 }
 
-async function handleInvoiceRequested(orderId) {
+async function handleInvoiceRequested(req, orderId) {
   const { data, error } = await getDb(req).from('sales_orders')
     .update({ status: 'invoice_requested' })
     .eq('id', orderId)
@@ -156,7 +151,7 @@ async function handleInvoiceRequested(orderId) {
   return data;
 }
 
-async function handleInvoiceApproved(orderId, approverId) {
+async function handleInvoiceApproved(req, orderId, approverId) {
   // Hai bước trong một: invoice_approved → pdi_pending (tự động)
   // Lưu approved_by, rồi ngay lập tức chuyển sang pdi_pending
   const { error: e1 } = await getDb(req).from('sales_orders')
@@ -173,7 +168,7 @@ async function handleInvoiceApproved(orderId, approverId) {
   return data; // trả về pdi_pending
 }
 
-async function handlePdiDone(orderId, pdi_notes, technicianId) {
+async function handlePdiDone(req, orderId, pdi_notes, technicianId) {
   const { data, error } = await getDb(req).from('sales_orders')
     .update({ status: 'pdi_done', pdi_notes, technician_id: technicianId })
     .eq('id', orderId)
@@ -183,7 +178,7 @@ async function handlePdiDone(orderId, pdi_notes, technicianId) {
   return data;
 }
 
-async function handleDeliver(orderId, existingDeliveryDate) {
+async function handleDeliver(req, orderId, existingDeliveryDate) {
   const deliveryDate = existingDeliveryDate || new Date().toISOString().split('T')[0];
   const { data: order, error } = await getDb(req).from('sales_orders')
     .update({ status: 'delivered', delivery_date: deliveryDate })
@@ -246,7 +241,7 @@ async function handleDeliver(orderId, existingDeliveryDate) {
   return order;
 }
 
-async function handleCancel(orderId, cancel_reason, order) {
+async function handleCancel(req, orderId, cancel_reason, order) {
   const currentStatus = order.status;
 
   const { data, error } = await getDb(req).from('sales_orders')
@@ -710,7 +705,7 @@ const updateOrderStatus = async (req, res) => {
 
     switch (toStatus) {
       case 'confirmed':
-        result = await handleConfirm(id);
+        result = await handleConfirm(req, id);
         // Cập nhật xe từ reserved → reserved (giữ nguyên, confirmed mới chắc chắn)
         break;
 
@@ -721,11 +716,11 @@ const updateOrderStatus = async (req, res) => {
         if (extraFields.deposit_amount > order.total_amount) {
           return res.status(400).json({ error: 'Số tiền cọc không được vượt quá tổng đơn hàng' });
         }
-        result = await handleDepositPaid(id, extraFields.deposit_amount, order.deposit_amount);
+        result = await handleDepositPaid(req, id, extraFields.deposit_amount, order.deposit_amount);
         break;
 
       case 'full_paid':
-        result = await handleFullPaid(id, {
+        result = await handleFullPaid(req, id, {
           receipt_number: extraFields.receipt_number,
           receipt_date:   extraFields.receipt_date,
           payment_note:   extraFields.payment_note,
@@ -746,30 +741,30 @@ const updateOrderStatus = async (req, res) => {
         break;
 
       case 'invoice_requested':
-        result = await handleInvoiceRequested(id);
+        result = await handleInvoiceRequested(req, id);
         break;
 
       case 'invoice_approved':
         // Tự động chuyển thẳng sang pdi_pending
-        result = await handleInvoiceApproved(id, req.user?.sub);
+        result = await handleInvoiceApproved(req, id, req.user?.sub);
         break;
 
       case 'pdi_done':
         if (!extraFields.pdi_notes?.trim() || extraFields.pdi_notes.trim().length < 5) {
           return res.status(400).json({ error: 'Ghi chú PDI tối thiểu 5 ký tự' });
         }
-        result = await handlePdiDone(id, extraFields.pdi_notes.trim(), req.user?.sub);
+        result = await handlePdiDone(req, id, extraFields.pdi_notes.trim(), req.user?.sub);
         break;
 
       case 'delivered':
-        result = await handleDeliver(id, order.delivery_date);
+        result = await handleDeliver(req, id, order.delivery_date);
         break;
 
       case 'cancelled':
         if (!extraFields.cancel_reason?.trim()) {
           return res.status(400).json({ error: 'Thiếu lý do huỷ đơn' });
         }
-        result = await handleCancel(id, extraFields.cancel_reason.trim(), order);
+        result = await handleCancel(req, id, extraFields.cancel_reason.trim(), order);
         // Trả xe về kho nếu chưa giao
         {
           const { data: items } = await getDb(req).from('sales_order_items')

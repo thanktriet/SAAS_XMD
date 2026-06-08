@@ -188,7 +188,7 @@ export default function SalesNewPage() {
     staleTime: 60_000,
   });
   const dsFees = feesData?.data ?? [];
-  const tongPhi = dsFees.reduce((s, f) => s + f.amount, 0);
+  const tongPhi = dsFees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
 
   // Dịch vụ đăng ký từ API
   const { data: svcData } = useQuery<{ data: RegistrationService[] }>({
@@ -200,7 +200,7 @@ export default function SalesNewPage() {
 
   const tongDichVu = dsDichVu
     .filter(s => dichVuChon.has(s.id))
-    .reduce((s, sv) => s + sv.price, 0);
+    .reduce((s, sv) => s + (Number(sv.price) || 0), 0);
 
   // Đơn vị tài chính (trả góp) — chỉ load khi cần
   const { data: ipData } = useQuery<{ data: InstallmentProvider[] }>({
@@ -332,7 +332,7 @@ export default function SalesNewPage() {
 
   // ─── Tính tiền ────────────────────────────────────────────────────────────
   const variantChon  = modelChon?.variants?.find(v => v.ten === phienBanChon);
-  const giaNiemYet   = (modelChon?.price_sell ?? 0) + (variantChon?.gia_chen_them ?? 0);
+  const giaNiemYet   = (Number(modelChon?.price_sell) || 0) + (Number(variantChon?.gia_chen_them) || 0);
 
   const tongPhKien = useMemo(
     () => gioPhKien.reduce((sum, item) => {
@@ -368,11 +368,11 @@ export default function SalesNewPage() {
     if (base <= 0) return 0;
 
     if (km.promo_type === 'percent') {
-      const giam = base * km.discount_percent / 100;
-      return km.max_discount_cap ? Math.min(giam, km.max_discount_cap) : giam;
+      const giam = base * (Number(km.discount_percent) || 0) / 100;
+      return km.max_discount_cap ? Math.min(giam, Number(km.max_discount_cap) || 0) : giam;
     }
     // fixed: không vượt quá base
-    return Math.min(km.discount_amount, base);
+    return Math.min(Number(km.discount_amount) || 0, base);
   };
 
   const tongGiamGia = useMemo(() => {
@@ -533,8 +533,8 @@ export default function SalesNewPage() {
       return [...prev, {
         accessory: pk,
         quantity: 1,
-        unit_price: pk.price_sell,
-        line_total: pk.price_sell,
+        unit_price: Number(pk.price_sell) || 0,
+        line_total: Number(pk.price_sell) || 0,
         serial_numbers:  isBattery ? [''] : undefined,
         assignment_type: isBattery ? 'purchase' : undefined,
       }];

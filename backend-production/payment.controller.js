@@ -216,9 +216,9 @@ const confirmPayment = async (req, res) => {
     const { data: updated, error: upErr } = await getDb(req).from('sales_order_payments')
       .update({
         status:          'confirmed',
-        receipt_number:  receipt_number?.trim() ?? null,
-        bank_reference:  bank_reference?.trim() ?? null,
-        notes:           notes?.trim() ?? payment.notes,
+        receipt_number:  receipt_number?.trim() || null,
+        bank_reference:  bank_reference?.trim() || null,
+        notes:           notes?.trim() || payment.notes,
         confirmed_by:    userId ?? null,
         confirmed_at:    new Date().toISOString(),
       })

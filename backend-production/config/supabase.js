@@ -19,7 +19,7 @@ const GLOBAL_TABLES = [
   'sales_order_items', 'sales_order_accessories',
   'sales_order_promotions', 'sales_order_fees', 'sales_order_services',
   // Bảng settings/config không có branch_id
-  'registration_services', 'fee_settings',
+  'registration_services',
 ];
 
 // supabaseAdmin.from('table') → QueryBuilder instance (không branch filter)

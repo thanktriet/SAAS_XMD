@@ -43,14 +43,23 @@ const getAccessories = async (req, res) => {
     if (search)   q = q.or(`name.ilike.%${search}%,code.ilike.%${search}%,brand.ilike.%${search}%`);
 
     // Lọc theo dòng xe: lấy phụ kiện của model_id đó HOẶC dùng cho tất cả xe (compatible_models = null/rỗng)
-    if (model_id) {
-      q = q.or(`compatible_models.is.null,compatible_models.eq.{},compatible_models.cs.{${model_id}}`);
-    }
+    // Note: QueryBuilder không hỗ trợ 'cs' (array contains) nên filter phía JS
+    const filterModelId = model_id || null;
 
     q = q.range((page - 1) * limit, page * limit - 1);
     const { data, count, error } = await q;
     if (error) return res.status(400).json({ error: error.message });
-    res.json({ data, total: count, page, limit });
+
+    // Filter theo model_id phía JS (vì QueryBuilder không hỗ trợ array contains)
+    let filtered = data ?? [];
+    if (filterModelId) {
+      filtered = filtered.filter(a => {
+        if (!a.compatible_models || a.compatible_models.length === 0) return true; // dùng cho tất cả xe
+        return a.compatible_models.includes(filterModelId);
+      });
+    }
+
+    res.json({ data: filtered, total: filterModelId ? filtered.length : count, page, limit });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -50,8 +50,18 @@ const addVehicle = async (req, res) => {
 const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
+    // Chỉ cho phép update các cột hợp lệ
+    const ALLOWED = ['vehicle_model_id', 'vin', 'engine_number', 'battery_serial', 'color',
+      'year_manufacture', 'import_date', 'import_price', 'status', 'notes', 'branch_id'];
+    const body = {};
+    for (const key of ALLOWED) {
+      if (req.body[key] !== undefined) body[key] = req.body[key];
+    }
+    if (Object.keys(body).length === 0) {
+      return res.status(400).json({ error: 'Không có dữ liệu cần cập nhật' });
+    }
     const { data, error } = await getDb(req).from('inventory_vehicles')
-      .update(req.body)
+      .update(body)
       .eq('id', id)
       .select()
       .single();

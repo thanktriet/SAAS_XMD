@@ -255,9 +255,8 @@ const confirmPayment = async (req, res) => {
         payment_method:      payment.payment_method,
         reference_id:        orderId,
         reference_type:      'sales_order',
-        description:         `Thu tiền đơn ${orderNumber} — ${methodLabel}`,
+        description:         `Thu tiền đơn ${orderNumber} — ${methodLabel}${notes?.trim() ? ` (${notes.trim()})` : ''}`,
         transaction_date:    payment.payment_date,
-        notes:               notes?.trim() ?? null,
         created_by:          userId ?? null,
       })
       .select('id')
@@ -326,9 +325,8 @@ const cancelPayment = async (req, res) => {
           payment_method:     payment.payment_method,
           reference_id:       orderId,
           reference_type:     'sales_order',
-          description:        `Huỷ thanh toán đơn ${orderNumber} — ${methodLabel}`,
+          description:        `Huỷ thanh toán đơn ${orderNumber} — ${methodLabel} (Đảo ngược bút toán ${payment.finance_transaction_id ?? 'N/A'})`,
           transaction_date:   new Date().toISOString().split('T')[0],
-          notes:              `Đảo ngược bút toán ${payment.finance_transaction_id ?? 'N/A'}`,
           created_by:         req.user?.sub ?? null,
         });
 

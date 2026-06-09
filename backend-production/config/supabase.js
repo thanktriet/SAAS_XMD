@@ -5,21 +5,19 @@
  */
 const { from, pool, QueryBuilder } = require('./queryBuilder');
 
-// Bảng GLOBAL — không filter theo branch_id
+// Bảng GLOBAL — không filter theo branch_id (không có cột branch_id hoặc là child table)
 const GLOBAL_TABLES = [
   'vehicle_models', 'vehicle_model_colors',
   'acc_organizations', 'acc_branches', 'acc_accounts', 'acc_fiscal_periods',
   'acc_account_mappings', 'acc_integration_configs',
-  'branch_branding', 'installment_providers',
+  'installment_providers',
   'branches', 'branch_license_logs', 'refresh_tokens', 'login_attempts',
   'license_plans',
-  'v_vehicle_stock_summary', 'v_monthly_revenue',
-  'spare_parts',
+  'v_monthly_revenue',
+  // Child tables của sales_orders (không có branch_id riêng, dùng order_id đã filter)
   'sales_order_payments', 'sales_order_attachments',
   'sales_order_items', 'sales_order_accessories',
   'sales_order_promotions', 'sales_order_fees', 'sales_order_services',
-  'warranty_records', 'finance_transactions',
-  'payment_settings', 'app_settings',
 ];
 
 // supabaseAdmin.from('table') → QueryBuilder instance (không branch filter)

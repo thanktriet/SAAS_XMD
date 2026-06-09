@@ -282,6 +282,16 @@ const deleteVehicle = async (req, res) => {
       return res.status(400).json({ error: `Không thể xóa xe ${xe.vin} đang có trạng thái "${xe.status}"` });
     }
 
+    // Kiểm tra xe có đang liên kết với đơn hàng nào không
+    const { data: linkedOrders } = await getDb(req).from('sales_order_items')
+      .select('id')
+      .eq('inventory_vehicle_id', id)
+      .limit(1);
+
+    if (linkedOrders && linkedOrders.length > 0) {
+      return res.status(400).json({ error: `Không thể xóa xe ${xe.vin} vì đang được gán trong đơn hàng. Hãy gỡ xe khỏi đơn trước.` });
+    }
+
     const { error } = await getDb(req).from('inventory_vehicles').delete().eq('id', id);
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: `Đã xóa xe ${xe.vin} khỏi kho` });

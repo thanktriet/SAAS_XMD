@@ -14,7 +14,7 @@ const GLOBAL_TABLES = [
   'branches', 'branch_license_logs', 'refresh_tokens', 'login_attempts',
   'license_plans',
   'v_vehicle_stock_summary', 'v_monthly_revenue',
-  'inventory_vehicles', 'spare_parts',
+  'spare_parts',
   'sales_order_payments', 'sales_order_attachments',
   'sales_order_items', 'sales_order_accessories',
   'sales_order_promotions', 'sales_order_fees', 'sales_order_services',

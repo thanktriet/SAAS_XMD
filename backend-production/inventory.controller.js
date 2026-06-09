@@ -30,8 +30,13 @@ const getInventory = async (req, res) => {
 // Thêm xe vào kho
 const addVehicle = async (req, res) => {
   try {
+    const body = { ...req.body };
+    // Tự gán branch_id từ user nếu không truyền
+    if (!body.branch_id && req.user?.branch_id) {
+      body.branch_id = req.user.branch_id;
+    }
     const { data, error } = await getDb(req).from('inventory_vehicles')
-      .insert([req.body])
+      .insert([body])
       .select()
       .single();
     if (error) return res.status(400).json({ error: error.message });

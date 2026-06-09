@@ -13,16 +13,11 @@ function getDb(req) { return req.db || supabaseAdmin; }
 const getFees = async (req, res) => {
   try {
     const showAll = req.query.all === 'true';
-    const modelId = req.query.model_id;
 
     let q = getDb(req).from('fee_settings')
-      .select('*, vehicle_models(brand, model_name)')
+      .select('*')
       .order('sort_order');
     if (!showAll) q = q.eq('is_active', true);
-    if (modelId) {
-      // Phí global (NULL) HOẶC phí của model này
-      q = q.or(`model_id.is.null,model_id.eq.${modelId}`);
-    }
 
     const { data, error } = await q;
     if (error) throw error;

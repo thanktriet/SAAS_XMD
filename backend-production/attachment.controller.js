@@ -28,31 +28,36 @@ const getAttachments = async (req, res) => {
 const uploadAttachment = async (req, res) => {
   try {
     const { id: orderId } = req.params;
-    const file = req.file;
-    if (!file) return res.status(400).json({ error: 'Không có file đính kèm' });
+    const files = req.files || (req.file ? [req.file] : []);
+    if (files.length === 0) return res.status(400).json({ error: 'Không có file đính kèm' });
 
-    const fileId = uuidv4();
-    const ext = path.extname(file.originalname);
-    const storedName = `${fileId}${ext}`;
-    const destPath = path.join(UPLOAD_DIR, storedName);
+    const results = [];
+    for (const file of files) {
+      const fileId = uuidv4();
+      const ext = path.extname(file.originalname);
+      const storedName = `${fileId}${ext}`;
+      const destPath = path.join(UPLOAD_DIR, storedName);
 
-    fs.writeFileSync(destPath, file.buffer);
+      fs.writeFileSync(destPath, file.buffer);
 
-    const { data, error } = await getDb(req).from('sales_order_attachments')
-      .insert([{
-        id: fileId,
-        order_id: orderId,
-        file_name: file.originalname,
-        stored_name: storedName,
-        mime_type: file.mimetype,
-        size_bytes: file.size,
-        uploaded_by: req.user?.sub || null,
-      }])
-      .select()
-      .single();
+      const { data, error } = await getDb(req).from('sales_order_attachments')
+        .insert([{
+          id: fileId,
+          order_id: orderId,
+          file_name: file.originalname,
+          stored_name: storedName,
+          mime_type: file.mimetype,
+          size_bytes: file.size,
+          uploaded_by: req.user?.sub || null,
+        }])
+        .select()
+        .single();
 
-    if (error) return res.status(400).json({ error: error.message });
-    res.status(201).json(data);
+      if (error) return res.status(400).json({ error: error.message });
+      results.push(data);
+    }
+
+    res.status(201).json({ data: results });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

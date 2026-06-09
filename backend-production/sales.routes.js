@@ -62,7 +62,7 @@ router.patch('/:id/dms-code', authorize('admin', 'manager', 'accountant'), updat
 
 // Attachments
 router.get('/:id/attachments', getAttachments);
-router.post('/:id/attachments', upload.single('file'), uploadAttachment);
+router.post('/:id/attachments', upload.array('files', 10), uploadAttachment);
 router.put('/:id/attachments/:attachmentId', upload.single('file'), replaceAttachment);
 router.delete('/:id/attachments/:attachmentId', deleteAttachment);
 router.get('/:id/attachments/:attachmentId/download', downloadAttachment);

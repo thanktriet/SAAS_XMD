@@ -42,12 +42,18 @@ const getGiftItems = async (req, res) => {
 
     if (category) q = q.eq('category', category);
     if (search)   q = q.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
-    if (low_stock === 'true') q = q.lte('qty_in_stock', supabaseAdmin.raw('qty_minimum'));
 
     q = q.range((page - 1) * limit, page * limit - 1);
     const { data, count, error } = await q;
     if (error) return res.status(400).json({ error: error.message });
-    res.json({ data, total: count, page, limit });
+
+    // Filter low_stock phía JS (QueryBuilder không hỗ trợ raw column compare)
+    let filtered = data ?? [];
+    if (low_stock === 'true') {
+      filtered = filtered.filter(g => (g.qty_in_stock ?? 0) <= (g.qty_minimum ?? 0));
+    }
+
+    res.json({ data: filtered, total: low_stock === 'true' ? filtered.length : count, page, limit });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

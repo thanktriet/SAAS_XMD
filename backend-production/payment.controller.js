@@ -111,7 +111,7 @@ const getPayments = async (req, res) => {
 const createPayment = async (req, res) => {
   try {
     const { id: orderId }   = req.params;
-    const userId            = req.user?.id;
+    const userId            = req.user?.sub;
     const {
       payment_method,
       amount,
@@ -186,7 +186,7 @@ const createPayment = async (req, res) => {
 const confirmPayment = async (req, res) => {
   try {
     const { id: orderId, paymentId } = req.params;
-    const userId = req.user?.id;
+    const userId = req.user?.sub;
     const { receipt_number, bank_reference, notes } = req.body;
 
     // Lấy payment
@@ -329,7 +329,7 @@ const cancelPayment = async (req, res) => {
           description:        `Huỷ thanh toán đơn ${orderNumber} — ${methodLabel}`,
           transaction_date:   new Date().toISOString().split('T')[0],
           notes:              `Đảo ngược bút toán ${payment.finance_transaction_id ?? 'N/A'}`,
-          created_by:         req.user?.id ?? null,
+          created_by:         req.user?.sub ?? null,
         });
 
       if (revErr) throw new Error(`Tạo bút toán đảo ngược thất bại: ${revErr.message}`);

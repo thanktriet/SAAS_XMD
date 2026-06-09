@@ -15,6 +15,11 @@ const GLOBAL_TABLES = [
   'license_plans',
   'v_vehicle_stock_summary', 'v_monthly_revenue',
   'inventory_vehicles', 'spare_parts',
+  'sales_order_payments', 'sales_order_attachments',
+  'sales_order_items', 'sales_order_accessories',
+  'sales_order_promotions', 'sales_order_fees', 'sales_order_services',
+  'warranty_records', 'finance_transactions',
+  'payment_settings', 'app_settings',
 ];
 
 // supabaseAdmin.from('table') → QueryBuilder instance (không branch filter)

@@ -109,7 +109,7 @@ export default function InventoryPage() {
       api.get('/inventory', {
         params: {
           status:           statusFilter  || undefined,
-          vehicle_model_id: modelFilter   || undefined,
+          model_id:         modelFilter   || undefined,
           search:           search        || undefined,
           page,
           limit: 15,

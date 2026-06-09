@@ -217,9 +217,12 @@ export default function SalesNewPage() {
         .filter(p => selectedPromos.has(p.id))
         .map(p => ({
           promotion_id: p.id,
+          promo_name: p.name,
           promo_type: p.promo_type,
           discount_percent: Number(p.discount_percent) || 0,
           discount_amount: calcPromoDiscount(p),
+          gift_item_name: (p as any).gift_item_name || null,
+          gift_quantity: (p as any).gift_quantity || 0,
         })),
       services: services
         .filter(s => selectedServices.has(s.id))

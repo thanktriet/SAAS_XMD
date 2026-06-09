@@ -13,6 +13,8 @@ const GLOBAL_TABLES = [
   'branch_branding', 'installment_providers',
   'branches', 'branch_license_logs', 'refresh_tokens', 'login_attempts',
   'license_plans',
+  'v_vehicle_stock_summary', 'v_monthly_revenue',
+  'inventory_vehicles', 'spare_parts',
 ];
 
 // supabaseAdmin.from('table') → QueryBuilder instance (không branch filter)

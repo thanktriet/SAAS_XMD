@@ -297,9 +297,9 @@ export default function InventoryPage() {
 
   // Tổng thống kê nhanh
   const tongXe       = data?.total ?? 0;
-  const tongConHang  = summaryData?.reduce((s: number, x: any) => s + (x.in_stock ?? 0), 0) ?? 0;
-  const tongDaBan    = summaryData?.reduce((s: number, x: any) => s + (x.sold ?? 0), 0) ?? 0;
-  const tongDatCoc   = summaryData?.reduce((s: number, x: any) => s + (x.reserved ?? 0), 0) ?? 0;
+  const tongConHang  = summaryData?.reduce((s: number, x: any) => s + Number(x.in_stock ?? 0), 0) ?? 0;
+  const tongDaBan    = summaryData?.reduce((s: number, x: any) => s + Number(x.sold ?? 0), 0) ?? 0;
+  const tongDatCoc   = summaryData?.reduce((s: number, x: any) => s + Number(x.reserved ?? 0), 0) ?? 0;
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
@@ -333,18 +333,18 @@ export default function InventoryPage() {
                   <div className="inv-stat-brand">{s.brand}</div>
                   <div className="inv-stat-model">{s.model_name}</div>
                   <div className="inv-stat-nums">
-                    <span className="inv-stat-main">{s.in_stock ?? 0}</span>
-                    <span className="inv-stat-sub">/ {s.total ?? 0} tổng</span>
+                    <span className="inv-stat-main">{Number(s.in_stock ?? 0)}</span>
+                    <span className="inv-stat-sub">/ {Number(s.total ?? 0)} tổng</span>
                   </div>
                   <div className="inv-stat-breakdown">
-                    {(s.reserved ?? 0) > 0 && (
+                    {(Number(s.reserved) ?? 0) > 0 && (
                       <span className="inv-stat-tag" style={{ background: '#fff7ed', color: '#9a3412' }}>
-                        🟠 {s.reserved} đặt cọc
+                        🟠 {Number(s.reserved)} đặt cọc
                       </span>
                     )}
-                    {(s.sold ?? 0) > 0 && (
+                    {(Number(s.sold) ?? 0) > 0 && (
                       <span className="inv-stat-tag" style={{ background: '#f3f4f6', color: '#374151' }}>
-                        ⚫ {s.sold} đã bán
+                        ⚫ {Number(s.sold)} đã bán
                       </span>
                     )}
                   </div>

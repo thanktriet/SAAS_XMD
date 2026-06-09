@@ -103,17 +103,47 @@ async function handleDepositPaid(req, orderId, deposit_amount, currentDeposit) {
     .select()
     .single();
   if (error) throw new Error(error.message);
+
+  const orderNumber = data.order_number || orderId;
+
+  // Tạo payment record (confirmed ngay vì đi qua status flow)
+  await getDb(req).from('sales_order_payments').insert({
+    order_id: orderId,
+    payment_method: 'cash',
+    amount: parseFloat(deposit_amount),
+    payment_date: new Date().toISOString().split('T')[0],
+    status: 'confirmed',
+    notes: 'Đặt cọc',
+    confirmed_by: req.user?.sub || null,
+    confirmed_at: new Date().toISOString(),
+  });
+
+  // Ghi finance_transaction
+  await getDb(req).from('finance_transactions').insert([{
+    transaction_number: `COC-${orderNumber}-${Date.now().toString(36).toUpperCase()}`,
+    type: 'income',
+    category: 'dat_coc',
+    amount: parseFloat(deposit_amount),
+    payment_method: 'cash',
+    reference_id: orderId,
+    reference_type: 'sales_order',
+    description: `Đặt cọc đơn hàng ${orderNumber}`,
+    transaction_date: new Date().toISOString().split('T')[0],
+  }]);
+
   return data;
 }
 
 async function handleFullPaid(req, orderId, { receipt_number, receipt_date, payment_note }, orderData) {
   // Kiểm tra số phiếu thu không trùng
-  const { data: existing } = await getDb(req).from('sales_orders')
-    .select('id')
-    .eq('receipt_number', receipt_number)
-    .neq('id', orderId)
-    .maybeSingle();
-  if (existing) throw { status: 422, message: `Số phiếu thu "${receipt_number}" đã tồn tại` };
+  if (receipt_number) {
+    const { data: existing } = await getDb(req).from('sales_orders')
+      .select('id')
+      .eq('receipt_number', receipt_number)
+      .neq('id', orderId)
+      .maybeSingle();
+    if (existing) throw { status: 422, message: `Số phiếu thu "${receipt_number}" đã tồn tại` };
+  }
 
   const { data: order, error } = await getDb(req).from('sales_orders')
     .update({ status: 'full_paid', receipt_number, receipt_date, payment_note })
@@ -122,19 +152,42 @@ async function handleFullPaid(req, orderId, { receipt_number, receipt_date, paym
     .single();
   if (error) throw new Error(error.message);
 
+  // Tính số tiền còn lại cần thu
+  const { data: paidRows } = await getDb(req).from('sales_order_payments')
+    .select('amount')
+    .eq('order_id', orderId)
+    .eq('status', 'confirmed');
+  const alreadyPaid = (paidRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
+  const remainingAmount = Math.max(0, Number(orderData.total_amount) - alreadyPaid);
+
+  // Tạo payment record (confirmed ngay)
+  if (remainingAmount > 0) {
+    await getDb(req).from('sales_order_payments').insert({
+      order_id: orderId,
+      payment_method: orderData.payment_method || 'cash',
+      amount: remainingAmount,
+      payment_date: receipt_date || new Date().toISOString().split('T')[0],
+      status: 'confirmed',
+      receipt_number: receipt_number || null,
+      notes: payment_note || 'Thu đủ tiền',
+      confirmed_by: req.user?.sub || null,
+      confirmed_at: new Date().toISOString(),
+    });
+  }
+
   // Sinh giao dịch tài chính — thu đủ tiền
-  const ftNum = `THU-${orderData.order_number}-${receipt_number}`;
+  const ftNum = `THU-${orderData.order_number}-${receipt_number || Date.now().toString(36).toUpperCase()}`;
 
   await getDb(req).from('finance_transactions').insert([{
     transaction_number:  ftNum,
     type:                'income',
     category:            'ban_hang',
-    amount:              orderData.total_amount,
+    amount:              remainingAmount > 0 ? remainingAmount : orderData.total_amount,
     payment_method:      orderData.payment_method,
     reference_id:        orderId,
     reference_type:      'sales_order',
-    description:         `Thu đủ tiền đơn hàng ${orderData.order_number} — phiếu ${receipt_number}`,
-    transaction_date:    receipt_date,
+    description:         `Thu đủ tiền đơn hàng ${orderData.order_number}${receipt_number ? ` — phiếu ${receipt_number}` : ''}`,
+    transaction_date:    receipt_date || new Date().toISOString().split('T')[0],
     notes:               payment_note || null,
   }]);
 

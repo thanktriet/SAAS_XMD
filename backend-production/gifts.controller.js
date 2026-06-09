@@ -7,15 +7,17 @@ function getDb(req) { return req.db || supabaseAdmin; }
 const userId = (req) => req.user?.sub || req.user?.id || null;
 
 const pickGiftFields = (body, isCreate = false) => {
-  const allowed = ['name', 'category', 'unit', 'qty_minimum', 'price_cost',
-                   'campaign_id', 'valid_from', 'valid_until',
-                   'compatible_models', 'image_url', 'note', 'is_active'];
+  const allowed = ['name', 'category', 'unit', 'qty_minimum', 'cost_value', 'retail_value',
+                   'campaign_id', 'voucher_service', 'expiry_months',
+                   'applicable_models', 'supplier', 'image_url', 'note', 'display_order', 'is_active'];
   const obj = {};
   allowed.forEach(f => { if (body[f] !== undefined) obj[f] = body[f]; });
+  // Support legacy field name from frontend
+  if (body.price_cost !== undefined && obj.cost_value === undefined) obj.cost_value = body.price_cost;
   if (isCreate) {
     obj.unit         = obj.unit        ?? 'cái';
     obj.qty_minimum  = obj.qty_minimum ?? 1;
-    obj.price_cost   = obj.price_cost  ?? 0;
+    obj.cost_value   = obj.cost_value  ?? 0;
     obj.qty_in_stock = 0;
     obj.is_active    = true;
     // code tự sinh bởi trigger generate_gift_code

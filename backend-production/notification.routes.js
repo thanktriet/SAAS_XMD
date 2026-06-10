@@ -17,7 +17,7 @@ router.post('/subscribe', authenticate, async (req, res) => {
       `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, branch_id)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, endpoint) DO UPDATE SET p256dh = $3, auth = $4`,
-      [req.user.id, endpoint, keys.p256dh, keys.auth, req.user.branch_id || null]
+      [req.user.sub, endpoint, keys.p256dh, keys.auth, req.user.branch_id || null]
     );
 
     res.json({ success: true });
@@ -37,7 +37,7 @@ router.delete('/unsubscribe', authenticate, async (req, res) => {
 
     await pool.query(
       'DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2',
-      [req.user.id, endpoint]
+      [req.user.sub, endpoint]
     );
 
     res.json({ success: true });
@@ -69,17 +69,17 @@ router.get('/', authenticate, async (req, res) => {
        WHERE user_id = $1
        ORDER BY created_at DESC
        LIMIT $2 OFFSET $3`,
-      [req.user.id, limit, offset]
+      [req.user.sub, limit, offset]
     );
 
     const { rows: [{ count }] } = await pool.query(
       'SELECT COUNT(*) FROM notifications WHERE user_id = $1',
-      [req.user.id]
+      [req.user.sub]
     );
 
     const { rows: [{ count: unread }] } = await pool.query(
       'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
-      [req.user.id]
+      [req.user.sub]
     );
 
     res.json({ data, total: parseInt(count), unread: parseInt(unread), page: parseInt(page), limit: parseInt(limit) });
@@ -94,7 +94,7 @@ router.get('/unread-count', authenticate, async (req, res) => {
   try {
     const { rows: [{ count }] } = await pool.query(
       'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
-      [req.user.id]
+      [req.user.sub]
     );
     res.json({ count: parseInt(count) });
   } catch (err) {
@@ -107,7 +107,7 @@ router.put('/:id/read', authenticate, async (req, res) => {
   try {
     await pool.query(
       'UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.sub]
     );
     res.json({ success: true });
   } catch (err) {
@@ -120,7 +120,7 @@ router.put('/read-all', authenticate, async (req, res) => {
   try {
     await pool.query(
       'UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false',
-      [req.user.id]
+      [req.user.sub]
     );
     res.json({ success: true });
   } catch (err) {

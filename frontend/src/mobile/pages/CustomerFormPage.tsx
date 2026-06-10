@@ -220,12 +220,16 @@ export default function CustomerFormPage() {
 
         <div className="m-form-row">
           <label>Nguồn khách hàng</label>
-          <input
-            type="text"
-            value={form.source}
-            onChange={e => set('source', e.target.value)}
-            placeholder="Facebook, giới thiệu, ..."
-          />
+          <select value={form.source} onChange={e => set('source', e.target.value)}>
+            <option value="">— Chọn —</option>
+            <option value="referral">Giới thiệu</option>
+            <option value="facebook">Facebook</option>
+            <option value="zalo">Zalo</option>
+            <option value="showroom">Showroom</option>
+            <option value="website">Website</option>
+            <option value="call_center">Call Center</option>
+            <option value="other">Khác</option>
+          </select>
         </div>
 
         <div className="m-form-row">

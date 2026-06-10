@@ -811,6 +811,19 @@ const updateOrderStatus = async (req, res) => {
 
       case 'delivered':
         result = await handleDeliver(req, id, order.delivery_date);
+        // Đảm bảo xe chuyển sang sold khi giao hàng
+        {
+          const { data: items } = await getDb(req).from('sales_order_items')
+            .select('inventory_vehicle_id')
+            .eq('order_id', id);
+          for (const item of items || []) {
+            if (item.inventory_vehicle_id) {
+              await getDb(req).from('inventory_vehicles')
+                .update({ status: 'sold' })
+                .eq('id', item.inventory_vehicle_id);
+            }
+          }
+        }
         break;
 
       case 'cancelled':

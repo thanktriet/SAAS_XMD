@@ -64,12 +64,13 @@ export default function CustomerFormPage() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  // Load existing customer for edit
-  const { data: existing } = useQuery<Customer>({
+  // Load existing customer for edit — API returns { customer, orders, warranties }
+  const { data: detailResult } = useQuery<{ customer: Customer; orders: any[]; warranties: any[] }>({
     queryKey: ['m-customer-detail', id],
     queryFn: () => api.get(`/customers/${id}`).then(r => r.data),
     enabled: isEdit,
   });
+  const existing = detailResult?.customer ?? null;
 
   useEffect(() => {
     if (existing) {

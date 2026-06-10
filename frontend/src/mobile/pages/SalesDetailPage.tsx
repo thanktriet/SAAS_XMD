@@ -303,7 +303,7 @@ export default function SalesDetailPage() {
               {services.map((svc: any, idx: number) => (
                 <div key={idx} className="m-product-item">
                   <div>
-                    <span className="m-product-name">{svc.name}</span>
+                    <span className="m-product-name">{svc.service_name || svc.name}</span>
                     {svc.type && (
                       <span className="m-badge" style={{ marginLeft: 6, fontSize: 10 }}>{svc.type}</span>
                     )}

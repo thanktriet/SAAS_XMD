@@ -11,6 +11,8 @@ interface CartItem {
   quantity: number;
 }
 
+const STEPS = ['Khách', 'Xe', 'Phụ kiện', 'DV & KM', 'Xác nhận'] as const;
+
 export default function SalesNewPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -27,12 +29,14 @@ export default function SalesNewPage() {
   const [colorChon, setColorChon] = useState('');
   const [vehicle, setVehicle] = useState<InventoryVehicle | null>(null);
 
-  // Step 3: Accessories + Services + Promotions
+  // Step 3: Accessories
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Step 4: Services + Promotions
   const [selectedPromos, setSelectedPromos] = useState<Set<string>>(new Set());
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
 
-  // Step 4: Payment
+  // Step 5: Payment
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer' | 'installment'>('cash');
   const [depositAmount, setDepositAmount] = useState('');
 
@@ -69,21 +73,21 @@ export default function SalesNewPage() {
   const { data: promoResult } = useQuery({
     queryKey: ['m-promotions', modelId],
     queryFn: () => api.get('/promotions/active', { params: { model_id: modelId || undefined } }).then(r => r.data),
-    enabled: step >= 3,
+    enabled: step >= 4,
   });
   const promotions: Promotion[] = (promoResult?.data ?? promoResult ?? []).filter((p: Promotion) => p.is_active);
 
   const { data: svcResult } = useQuery({
     queryKey: ['m-reg-services'],
     queryFn: () => api.get('/settings/services').then(r => r.data),
-    enabled: step >= 3,
+    enabled: step >= 4,
   });
   const services: RegistrationService[] = svcResult?.data ?? [];
 
   const { data: feesResult } = useQuery({
     queryKey: ['m-fees', modelId],
     queryFn: () => api.get('/settings/fees', { params: { model_id: modelId || undefined } }).then(r => r.data),
-    enabled: step >= 3,
+    enabled: step >= 4,
   });
   const fees: { key: string; label: string; amount: number }[] = feesResult?.data ?? [];
 
@@ -101,7 +105,6 @@ export default function SalesNewPage() {
     [inventory, colorChon]
   );
 
-  // Không tự động chọn xe đầu tiên — người dùng phải chọn VIN
   useEffect(() => {
     if (vehiclesForColor.length === 1) setVehicle(vehiclesForColor[0]);
     else setVehicle(null);
@@ -236,9 +239,9 @@ export default function SalesNewPage() {
   return (
     <div className="m-page m-wizard">
 
-      {/* Progress bar — 4 bước */}
+      {/* Progress bar — 5 bước */}
       <div className="m-wizard-progress">
-        {(['Khách', 'Xe', 'Sản phẩm', 'Thanh toán'] as const).map((label, i) => {
+        {STEPS.map((label, i) => {
           const s = i + 1;
           return (
             <div key={s} className={`m-wizard-step${step >= s ? ' active' : ''}`}>
@@ -252,11 +255,14 @@ export default function SalesNewPage() {
       {/* ═══ Bước 1: Khách hàng ═══ */}
       {step === 1 && (
         <div className="m-wizard-content">
+          <h3 className="m-section-title">Chọn khách hàng</h3>
+
           {customer ? (
             <div className="m-card m-selected-card">
               <div className="m-selected-info">
                 <strong>{customer.full_name}</strong>
                 <span>{customer.phone}</span>
+                {customer.address && <span style={{ fontSize: 12, color: '#666' }}>{customer.address}</span>}
               </div>
               <button className="m-btn-sm" onClick={() => setCustomer(null)}>Đổi</button>
             </div>
@@ -314,6 +320,7 @@ export default function SalesNewPage() {
               )}
             </>
           )}
+
           {customer && (
             <button className="m-btn-primary m-btn-next" onClick={() => setStep(2)}>
               Tiếp theo: Chọn xe →
@@ -322,7 +329,7 @@ export default function SalesNewPage() {
         </div>
       )}
 
-      {/* ═══ Bước 2: Chọn dòng xe → màu ═══ */}
+      {/* ═══ Bước 2: Chọn dòng xe → màu → VIN ═══ */}
       {step === 2 && (
         <div className="m-wizard-content">
 
@@ -343,7 +350,7 @@ export default function SalesNewPage() {
             ))}
           </div>
 
-          {/* Chọn màu — hiện ra sau khi chọn model */}
+          {/* Chọn màu */}
           {modelId && (
             <>
               <h3 className="m-section-title" style={{ marginTop: 20 }}>Chọn màu xe</h3>
@@ -429,14 +436,13 @@ export default function SalesNewPage() {
         </div>
       )}
 
-      {/* ═══ Bước 3: Phụ kiện + Dịch vụ + Khuyến mãi ═══ */}
+      {/* ═══ Bước 3: Phụ kiện ═══ */}
       {step === 3 && (
         <div className="m-wizard-content">
-
-          {/* Phụ kiện */}
           <h3 className="m-section-title">Phụ kiện bán kèm</h3>
+
           {accessories.length === 0 ? (
-            <p className="m-card-sub">Không có phụ kiện</p>
+            <p className="m-card-sub">Không có phụ kiện cho dòng xe này</p>
           ) : (
             <div className="m-accessory-list">
               {accessories.filter(a => (a.qty_in_stock ?? 0) > 0).map(acc => {
@@ -462,10 +468,45 @@ export default function SalesNewPage() {
             </div>
           )}
 
+          {/* Cart summary */}
+          {cart.length > 0 && (
+            <div className="m-card" style={{ marginTop: 16 }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: 13, color: '#666' }}>Đã chọn ({cart.length})</h4>
+              {cart.map(item => (
+                <div key={item.accessory.id} className="m-info-row">
+                  <span>{item.accessory.name} × {item.quantity}</span>
+                  <span>{formatCurrency((Number(item.accessory.price_sell) || 0) * item.quantity)}</span>
+                </div>
+              ))}
+              <div className="m-divider" />
+              <div className="m-info-row m-total-row">
+                <span>Tổng phụ kiện</span>
+                <strong>{formatCurrency(accTotal)}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Summary bar */}
+          <div className="m-summary-bar">
+            <div>
+              <span className="m-summary-label">Phụ kiện: {cart.length} loại</span>
+              <strong className="m-summary-total">{formatCurrency(accTotal)}</strong>
+            </div>
+            <button className="m-btn-primary" onClick={() => setStep(4)}>
+              Tiếp →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Bước 4: Dịch vụ + Khuyến mãi ═══ */}
+      {step === 4 && (
+        <div className="m-wizard-content">
+
           {/* Dịch vụ đăng ký */}
           {services.length > 0 && (
             <>
-              <h3 className="m-section-title" style={{ marginTop: 20 }}>Dịch vụ đăng ký</h3>
+              <h3 className="m-section-title">Dịch vụ đăng ký</h3>
               <div className="m-promo-list">
                 {services.map(sv => {
                   const checked = selectedServices.has(sv.id);
@@ -488,6 +529,26 @@ export default function SalesNewPage() {
                     </div>
                   );
                 })}
+              </div>
+            </>
+          )}
+
+          {/* Phí phát sinh */}
+          {fees.length > 0 && (
+            <>
+              <h3 className="m-section-title" style={{ marginTop: 20 }}>Phí phát sinh</h3>
+              <div className="m-card">
+                {fees.map(f => (
+                  <div key={f.key} className="m-info-row">
+                    <span>{f.label}</span>
+                    <span>+{formatCurrency(Number(f.amount) || 0)}</span>
+                  </div>
+                ))}
+                <div className="m-divider" />
+                <div className="m-info-row m-total-row">
+                  <span>Tổng phí</span>
+                  <strong>{formatCurrency(feeTotal)}</strong>
+                </div>
               </div>
             </>
           )}
@@ -542,15 +603,15 @@ export default function SalesNewPage() {
                 <span className="m-summary-discount"> (-{formatCurrency(totalDiscount)})</span>
               )}
             </div>
-            <button className="m-btn-primary" onClick={() => setStep(4)}>
+            <button className="m-btn-primary" onClick={() => setStep(5)}>
               Tiếp →
             </button>
           </div>
         </div>
       )}
 
-      {/* ═══ Bước 4: Thanh toán & Xác nhận ═══ */}
-      {step === 4 && (
+      {/* ═══ Bước 5: Xác nhận & Thanh toán ═══ */}
+      {step === 5 && (
         <div className="m-wizard-content">
 
           {/* Tóm tắt đơn hàng */}
@@ -604,9 +665,9 @@ export default function SalesNewPage() {
             <h3 className="m-card-title">Phương thức thanh toán</h3>
             <div className="m-radio-group">
               {[
-                { key: 'cash', label: 'Tiền mặt' },
-                { key: 'bank_transfer', label: 'Chuyển khoản' },
-                { key: 'installment', label: 'Trả góp' },
+                { key: 'cash', label: 'Tiền mặt', icon: '💵' },
+                { key: 'bank_transfer', label: 'Chuyển khoản', icon: '🏦' },
+                { key: 'installment', label: 'Trả góp', icon: '📋' },
               ].map(opt => (
                 <label key={opt.key} className={`m-radio-item${paymentMethod === opt.key ? ' active' : ''}`}>
                   <input
@@ -616,7 +677,7 @@ export default function SalesNewPage() {
                     checked={paymentMethod === opt.key}
                     onChange={() => setPaymentMethod(opt.key as typeof paymentMethod)}
                   />
-                  <span>{opt.label}</span>
+                  <span>{opt.icon} {opt.label}</span>
                 </label>
               ))}
             </div>

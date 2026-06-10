@@ -13,19 +13,14 @@ export default function CustomerDetailPage() {
   const isOnline = useNetworkStatus();
   const [offlineCustomer, setOfflineCustomer] = useState<any>(null);
 
-  // Online: fetch from API
-  const { data: customer, isLoading } = useQuery<Customer>({
+  // Online: fetch from API — response is { customer, orders, warranties }
+  const { data: detailResult, isLoading } = useQuery<{ customer: Customer; orders: SalesOrder[]; warranties: any[] }>({
     queryKey: ['m-customer-detail', id],
     queryFn: () => api.get(`/customers/${id}`).then(r => r.data),
     enabled: !!id && isOnline,
   });
-
-  // Customer orders
-  const { data: ordersResult } = useQuery<{ data: SalesOrder[]; total: number }>({
-    queryKey: ['m-customer-orders', id],
-    queryFn: () => api.get('/sales', { params: { customer_id: id, limit: 20 } }).then(r => r.data),
-    enabled: !!id && isOnline,
-  });
+  const customer = detailResult?.customer ?? null;
+  const ordersFromDetail = detailResult?.orders ?? [];
 
   // Offline fallback
   useEffect(() => {
@@ -35,7 +30,7 @@ export default function CustomerDetailPage() {
   }, [isOnline, id]);
 
   const data_ = customer || offlineCustomer;
-  const orders = ordersResult?.data ?? [];
+  const orders = ordersFromDetail;
 
   if (isLoading && isOnline) {
     return (

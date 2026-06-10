@@ -144,6 +144,23 @@ const createBranch = async (req, res) => {
       .from('branch_branding')
       .insert([{ branch_id: data.id, store_name: branch_name }]);
 
+    // Sync vào bảng branches (license management)
+    await supabaseAdmin
+      .from('branches')
+      .insert([{
+        id: data.id,
+        code: branch_code,
+        name: branch_name,
+        address: address || null,
+        phone: phone || null,
+        email: email || null,
+        is_active: true,
+        license_start: new Date().toISOString(),
+        license_plan: 'basic',
+        max_users: 10,
+        created_by: req.user.sub,
+      }]);
+
     res.status(201).json({ message: `Đã tạo chi nhánh ${branch_name}`, data });
   } catch (err) {
     res.status(500).json({ error: err.message });

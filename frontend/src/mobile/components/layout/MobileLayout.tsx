@@ -4,10 +4,23 @@ import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 import FAB from './FAB';
 import OfflineBadge from '../ui/OfflineBadge';
+import { usePushNotification } from '../../hooks/usePushNotification';
 
 export default function MobileLayout() {
   const location = useLocation();
   const [scrollDir, setScrollDir] = useState<'up' | 'down'>('up');
+  const { isSupported, isSubscribed, subscribe } = usePushNotification();
+
+  // Auto-prompt push notification after login (once)
+  useEffect(() => {
+    if (isSupported && !isSubscribed) {
+      // Delay 3s to not block initial render
+      const timer = setTimeout(() => {
+        subscribe();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSupported, isSubscribed, subscribe]);
 
   // Detect scroll direction for FAB hide/show
   useEffect(() => {

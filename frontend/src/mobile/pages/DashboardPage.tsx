@@ -26,7 +26,7 @@ export default function DashboardPage() {
     queryFn: () => api.get('/sales', { params: { limit: 5 } }).then(r => r.data),
   });
 
-  const todayTotal = todayOrders?.data?.reduce((sum, o) => sum + (o.total_amount || 0), 0) ?? 0;
+  const todayTotal = todayOrders?.data?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) ?? 0;
   const todayCount = todayOrders?.total ?? 0;
   const pendingCount = pendingOrders?.total ?? 0;
 

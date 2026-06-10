@@ -44,7 +44,7 @@ export default function MobileHeader() {
             ←
           </button>
         ) : (
-          <span className="m-header-branch">{branding?.store_name || 'XMD'}</span>
+          <span className="m-header-branch">{branding?.branch_name || branding?.store_name || 'XMD'}</span>
         )}
       </div>
 

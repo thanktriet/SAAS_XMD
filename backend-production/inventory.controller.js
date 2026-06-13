@@ -6,7 +6,7 @@ function getDb(req) { return req.db || supabaseAdmin; }
 // Lấy danh sách kho xe
 const getInventory = async (req, res) => {
   try {
-    const { status, model_id, color, page = 1, limit = 20 } = req.query;
+    const { status, model_id, color, search, page = 1, limit = 20 } = req.query;
     let query = getDb(req).from('inventory_vehicles')
       .select(`
         *,
@@ -18,6 +18,7 @@ const getInventory = async (req, res) => {
     if (status) { if (status.includes(',')) { query = query.in('status', status.split(',')); } else { query = query.eq('status', status); } }
     if (model_id) query = query.eq('vehicle_model_id', model_id);
     if (color) query = query.ilike('color', `%${color}%`);
+    if (search) query = query.or(`vin.ilike.%${search}%,engine_number.ilike.%${search}%,battery_serial.ilike.%${search}%`);
 
     const { data, error, count } = await query;
     if (error) return res.status(400).json({ error: error.message });

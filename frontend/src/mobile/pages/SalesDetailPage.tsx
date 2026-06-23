@@ -475,13 +475,15 @@ export default function SalesDetailPage() {
         <div className="m-input-group">
           <label>Số tiền cọc</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Nhập số tiền..."
             value={depositAmount}
-            onChange={e => setDepositAmount(e.target.value)}
-            max={order?.total_amount}
-            min={1}
+            onChange={e => setDepositAmount(e.target.value.replace(/[^0-9]/g, ''))}
           />
+          {depositAmount && (
+            <span className="m-card-sub">{formatCurrency(Number(depositAmount))}</span>
+          )}
         </div>
         <button
           className="m-btn-primary"

@@ -87,25 +87,21 @@ const getDashboard = async (req, res) => {
       getDb(req).from('accessory_orders').select('id', { count: 'exact', head: true })
         .gte('created_at', m0.start).lt('created_at', m0.end).neq('payment_status', 'cancelled'),
 
-      // Top mẫu xe bán chạy tháng này
-      getDb(req).from('sales_order_items')
-        .select(`
-          quantity, line_total, vehicle_model_id,
-          vehicle_models(brand, model_name),
-          sales_orders!inner(order_date, status)
-        `)
-        .gte('sales_orders.order_date', m0.start)
-        .lt('sales_orders.order_date', m0.end)
-        .neq('sales_orders.status', 'cancelled'),
+      // Top mẫu xe — lấy order IDs tháng này
+      getDb(req).from('sales_orders')
+        .select('id')
+        .gte('order_date', m0.start)
+        .lt('order_date', m0.end)
+        .neq('status', 'cancelled'),
 
-      // 5 đơn gần đây nhất
+      // 3 đơn gần đây nhất
       getDb(req).from('sales_orders')
         .select(`
           id, order_number, total_amount, status, order_date, deposit_amount,
           customers(full_name, phone)
         `)
         .order('created_at', { ascending: false })
-        .limit(5),
+        .limit(3),
     ]);
 
     // Doanh thu xe
@@ -125,26 +121,34 @@ const getDashboard = async (req, res) => {
     const grandRevenueThis = totalRevenueThis + totalServiceRevenueThis;
     const grandRevenueLast = totalRevenueLast + totalServiceRevenueLast;
 
-    // Aggregate top models
-    const modelMap = {};
-    for (const item of (topModelsRaw.data || [])) {
-      const key = item.vehicle_model_id;
-      if (!key) continue;
-      if (!modelMap[key]) {
-        modelMap[key] = {
-          vehicle_model_id: key,
-          brand:      item.vehicle_models?.brand ?? '',
-          model_name: item.vehicle_models?.model_name ?? '',
-          quantity:   0,
-          revenue:    0,
-        };
+    // Aggregate top models — 2-step: get items for this month's orders
+    const orderIds = (topModelsRaw.data || []).map(o => o.id);
+    let topModels = [];
+    if (orderIds.length > 0) {
+      const { data: items } = await getDb(req).from('sales_order_items')
+        .select('quantity, line_total, vehicle_model_id, vehicle_models(brand, model_name)')
+        .in('order_id', orderIds);
+
+      const modelMap = {};
+      for (const item of (items || [])) {
+        const key = item.vehicle_model_id;
+        if (!key) continue;
+        if (!modelMap[key]) {
+          modelMap[key] = {
+            vehicle_model_id: key,
+            brand:      item.vehicle_models?.brand ?? '',
+            model_name: item.vehicle_models?.model_name ?? '',
+            quantity:   0,
+            revenue:    0,
+          };
+        }
+        modelMap[key].quantity += Number(item.quantity || 0);
+        modelMap[key].revenue  += Number(item.line_total || 0);
       }
-      modelMap[key].quantity += Number(item.quantity || 0);
-      modelMap[key].revenue  += Number(item.line_total || 0);
+      topModels = Object.values(modelMap)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
     }
-    const topModels = Object.values(modelMap)
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5);
 
     res.json({
       // KPI cards

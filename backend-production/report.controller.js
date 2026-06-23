@@ -44,7 +44,6 @@ const getDashboard = async (req, res) => {
       // Đơn bán phụ kiện (accessory_orders) — paid trong tháng
       accOrderRevenueThis, accOrderRevenueLast,
       accOrderCountThisMonth,
-      topModelsRaw,
       recentOrders,
     ] = await Promise.all([
       // Tồn kho xe
@@ -87,13 +86,6 @@ const getDashboard = async (req, res) => {
       getDb(req).from('accessory_orders').select('id', { count: 'exact', head: true })
         .gte('created_at', m0.start).lt('created_at', m0.end).neq('payment_status', 'cancelled'),
 
-      // Top mẫu xe — lấy order IDs tháng này
-      getDb(req).from('sales_orders')
-        .select('id')
-        .gte('order_date', m0.start)
-        .lt('order_date', m0.end)
-        .neq('status', 'cancelled'),
-
       // 3 đơn gần đây nhất
       getDb(req).from('sales_orders')
         .select(`
@@ -121,33 +113,34 @@ const getDashboard = async (req, res) => {
     const grandRevenueThis = totalRevenueThis + totalServiceRevenueThis;
     const grandRevenueLast = totalRevenueLast + totalServiceRevenueLast;
 
-    // Aggregate top models — 2-step: get items for this month's orders
-    const orderIds = (topModelsRaw.data || []).map(o => o.id);
+    // Aggregate top models — SQL direct pour fiabilité
+    const pool = require('./database');
+    const branchId = req.user?.branch_id;
     let topModels = [];
-    if (orderIds.length > 0) {
-      const { data: items } = await getDb(req).from('sales_order_items')
-        .select('quantity, line_total, vehicle_model_id, vehicle_models(brand, model_name)')
-        .in('order_id', orderIds);
+    {
+      const branchFilter = branchId ? `AND so.branch_id = '${branchId}'` : '';
+      const { rows } = await pool.query(`
+        SELECT soi.vehicle_model_id, vm.brand, vm.model_name,
+               SUM(soi.quantity) as total_qty,
+               SUM(soi.line_total::numeric) as total_revenue
+        FROM sales_order_items soi
+        JOIN sales_orders so ON so.id = soi.order_id
+        JOIN vehicle_models vm ON vm.id = soi.vehicle_model_id
+        WHERE so.order_date >= $1 AND so.order_date < $2
+          AND so.status != 'cancelled'
+          ${branchFilter}
+        GROUP BY soi.vehicle_model_id, vm.brand, vm.model_name
+        ORDER BY total_qty DESC
+        LIMIT 5
+      `, [m0.start, m0.end]);
 
-      const modelMap = {};
-      for (const item of (items || [])) {
-        const key = item.vehicle_model_id;
-        if (!key) continue;
-        if (!modelMap[key]) {
-          modelMap[key] = {
-            vehicle_model_id: key,
-            brand:      item.vehicle_models?.brand ?? '',
-            model_name: item.vehicle_models?.model_name ?? '',
-            quantity:   0,
-            revenue:    0,
-          };
-        }
-        modelMap[key].quantity += Number(item.quantity || 0);
-        modelMap[key].revenue  += Number(item.line_total || 0);
-      }
-      topModels = Object.values(modelMap)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
+      topModels = rows.map(r => ({
+        vehicle_model_id: r.vehicle_model_id,
+        brand: r.brand,
+        model_name: r.model_name,
+        quantity: Number(r.total_qty),
+        revenue: Number(r.total_revenue),
+      }));
     }
 
     res.json({

@@ -7,8 +7,8 @@ const createPaymentRules = [
     .withMessage('Phương thức không hợp lệ (cash | bank_transfer | qr_code)'),
 
   body('amount')
-    .isFloat({ min: 1000 })
-    .withMessage('Số tiền phải lớn hơn 1.000 ₫'),
+    .isFloat({ min: 1 })
+    .withMessage('Số tiền phải lớn hơn 0'),
 
   body('payment_date')
     .isDate()

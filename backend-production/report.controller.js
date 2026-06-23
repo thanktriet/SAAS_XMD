@@ -113,12 +113,17 @@ const getDashboard = async (req, res) => {
     const grandRevenueThis = totalRevenueThis + totalServiceRevenueThis;
     const grandRevenueLast = totalRevenueLast + totalServiceRevenueLast;
 
-    // Aggregate top models — SQL direct pour fiabilité
+    // Aggregate top models — SQL direct cho fiabilité
     const pool = require('./database');
     const branchId = req.user?.branch_id;
     let topModels = [];
-    {
-      const branchFilter = branchId ? `AND so.branch_id = '${branchId}'` : '';
+    try {
+      const params = [m0.start, m0.end, 'cancelled'];
+      let branchFilter = '';
+      if (branchId) {
+        branchFilter = 'AND so.branch_id = $4';
+        params.push(branchId);
+      }
       const { rows } = await pool.query(`
         SELECT soi.vehicle_model_id, vm.brand, vm.model_name,
                SUM(soi.quantity) as total_qty,
@@ -127,12 +132,12 @@ const getDashboard = async (req, res) => {
         JOIN sales_orders so ON so.id = soi.order_id
         JOIN vehicle_models vm ON vm.id = soi.vehicle_model_id
         WHERE so.order_date >= $1 AND so.order_date < $2
-          AND so.status != 'cancelled'
+          AND so.status != $3
           ${branchFilter}
         GROUP BY soi.vehicle_model_id, vm.brand, vm.model_name
         ORDER BY total_qty DESC
         LIMIT 5
-      `, [m0.start, m0.end]);
+      `, params);
 
       topModels = rows.map(r => ({
         vehicle_model_id: r.vehicle_model_id,
@@ -141,6 +146,8 @@ const getDashboard = async (req, res) => {
         quantity: Number(r.total_qty),
         revenue: Number(r.total_revenue),
       }));
+    } catch (e) {
+      console.error('[Dashboard] top_models error:', e.message);
     }
 
     res.json({

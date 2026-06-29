@@ -86,14 +86,14 @@ const getDashboard = async (req, res) => {
       getDb(req).from('accessory_orders').select('id', { count: 'exact', head: true })
         .gte('created_at', m0.start).lt('created_at', m0.end).neq('payment_status', 'cancelled'),
 
-      // 3 đơn gần đây nhất
+      // 5 đơn gần đây nhất
       getDb(req).from('sales_orders')
         .select(`
           id, order_number, total_amount, status, order_date, deposit_amount,
           customers(full_name, phone)
         `)
         .order('created_at', { ascending: false })
-        .limit(3),
+        .limit(5),
     ]);
 
     // Doanh thu xe

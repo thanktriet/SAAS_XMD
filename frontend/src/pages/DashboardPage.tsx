@@ -205,50 +205,45 @@ export default function DashboardPage() {
                   Chưa có đơn nào
                 </div>
               ) : (
-                stats!.recent_orders.map((o, idx) => {
-                  const st = ORDER_STATUS[o.status];
-                  return (
-                    <div
-                      key={o.id}
-                      onClick={() => navigate(`/sales/${o.id}`)}
-                      style={{
-                        padding: '12px 16px',
-                        borderBottom: idx < stats!.recent_orders.length - 1 ? '1px solid #f3f4f6' : 'none',
-                        cursor: 'pointer',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#2563eb' }}>
+                <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #f3f4f6', fontSize: 11, color: '#6b7280', textAlign: 'left' }}>
+                      <th style={{ padding: '8px 16px' }}>Mã đơn</th>
+                      <th style={{ padding: '8px 8px' }}>Khách hàng</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'right' }}>Tổng tiền</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'center' }}>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats!.recent_orders.map(o => {
+                      const st = ORDER_STATUS[o.status];
+                      return (
+                        <tr
+                          key={o.id}
+                          onClick={() => navigate(`/sales/${o.id}`)}
+                          style={{ borderBottom: '1px solid #f9fafb', cursor: 'pointer' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#2563eb', fontSize: 12 }}>
                             {o.order_number}
-                          </span>
-                          <span className={`badge ${st?.cls ?? 'badge-gray'}`} style={{ fontSize: 10 }}>
-                            {st?.label ?? o.status}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {o.customers?.full_name || '—'}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>
-                          {formatDate(o.order_date)}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, fontSize: 13, color: '#111' }}>
-                          {formatCurrency(o.total_amount)}
-                        </div>
-                        {o.deposit_amount > 0 && (
-                          <div style={{ fontSize: 11, color: '#16a34a' }}>
-                            Cọc: {formatCurrency(o.deposit_amount)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                          </td>
+                          <td style={{ padding: '10px 8px', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {o.customers?.full_name || '—'}
+                          </td>
+                          <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>
+                            {formatCurrency(Number(o.total_amount) || 0)}
+                          </td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                            <span className={`badge ${st?.cls ?? 'badge-gray'}`} style={{ fontSize: 10 }}>
+                              {st?.label ?? o.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import type { DashboardStats } from '../types';
-import { formatCurrency, formatDate, ORDER_STATUS } from '../utils/helpers';
+import { formatCurrency, ORDER_STATUS } from '../utils/helpers';
 
 // ─── Helper hiển thị badge thay đổi ──────────────────────────────────────────
 function ChangeBadge({ pct }: { pct: number }) {

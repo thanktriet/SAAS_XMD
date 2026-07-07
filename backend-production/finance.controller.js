@@ -1,4 +1,5 @@
 ﻿const { supabaseAdmin } = require('./config/supabase');
+const { generateCode } = require('./codeGenerator');
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
@@ -29,8 +30,11 @@ const getTransactions = async (req, res) => {
 // Tạo giao dịch thủ công
 const createTransaction = async (req, res) => {
   try {
-    const { count } = await getDb(req).from('finance_transactions').select('*', { count: 'exact', head: true });
-    const transaction_number = `${req.body.type === 'income' ? 'THU' : 'CHI'}-${String(count + 1).padStart(6, '0')}`;
+    const transaction_number = await generateCode(req, {
+      table: 'finance_transactions', column: 'transaction_number',
+      prefix: req.body.type === 'income' ? 'PT' : 'PC',
+      padLength: 4, yearInPrefix: true,
+    });
     const { data, error } = await getDb(req).from('finance_transactions')
       .insert([{ ...req.body, transaction_number, created_by: req.user?.sub }])
       .select().single();

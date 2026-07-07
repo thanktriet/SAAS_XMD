@@ -647,11 +647,12 @@ class QueryBuilder {
       orderClause = `ORDER BY ${parts.join(', ')}`;
     }
 
-    // Pagination
+    // Pagination — .limit(n) sets only _rangeTo; .range(from,to) sets both.
+    // Default offset to 0 when _rangeFrom is null so bare .limit() works.
     let limitClause = '';
-    if (this._rangeFrom !== null && this._rangeTo !== null && !headOnly) {
-      const offset = this._rangeFrom;
-      const limit = this._rangeTo - this._rangeFrom + 1;
+    if (this._rangeTo !== null && !headOnly) {
+      const offset = this._rangeFrom || 0;
+      const limit = this._rangeTo - offset + 1;
       limitClause = `LIMIT ${limit} OFFSET ${offset}`;
     }
 

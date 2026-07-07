@@ -1,25 +1,17 @@
 ﻿const { supabaseAdmin } = require('./config/supabase');
+const { generateCode } = require('./codeGenerator');
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
 
 const userId = (req) => req.user?.sub || null;
 
-async function generateDepositCode() {
-  const year = new Date().getFullYear();
-  const prefix = `NT${year}`;
-  const { data: last } = await getDb(req).from('cash_deposits')
-    .select('deposit_code')
-    .like('deposit_code', `${prefix}%`)
-    .order('deposit_code', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  let nextNum = 1;
-  if (last?.deposit_code) {
-    const num = parseInt(last.deposit_code.replace(prefix, ''), 10);
-    if (!isNaN(num)) nextNum = num + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+// ─── Sinh mã phiếu nộp tiền — có prefix chi nhánh: CN01-NT202600001 ───────────
+async function generateDepositCode(req) {
+  return generateCode(req, {
+    table: 'cash_deposits', column: 'deposit_code',
+    prefix: 'NT', padLength: 5, yearInPrefix: true,
+  });
 }
 
 const getDeposits = async (req, res) => {

@@ -3,26 +3,16 @@
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
 const { validateBatteryItems, returnBatteryToStock } = require('./battery.service');
+const { generateCode } = require('./codeGenerator');
 
 const userId = (req) => req.user?.sub || null;
 
-// ─── Sinh mã phiếu TP2026XXXXX ────────────────────────────────────────────────
-async function generateRentalCode() {
-  const year = new Date().getFullYear();
-  const prefix = `TP${year}`;
-  const { data: last } = await getDb(req).from('battery_rentals')
-    .select('rental_code')
-    .like('rental_code', `${prefix}%`)
-    .order('rental_code', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextNum = 1;
-  if (last?.rental_code) {
-    const num = parseInt(last.rental_code.replace(prefix, ''), 10);
-    if (!isNaN(num)) nextNum = num + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+// ─── Sinh mã phiếu — có prefix chi nhánh: CN01-TP202600001 ────────────────────
+async function generateRentalCode(req) {
+  return generateCode(req, {
+    table: 'battery_rentals', column: 'rental_code',
+    prefix: 'TP', padLength: 5, yearInPrefix: true,
+  });
 }
 
 // ─── Danh sách phiếu thuê ─────────────────────────────────────────────────────

@@ -1,27 +1,17 @@
 ﻿const { supabaseAdmin } = require('./config/supabase');
+const { generateCode } = require('./codeGenerator');
 
 // Helper: dùng branch-scoped client nếu có (từ auth middleware)
 function getDb(req) { return req.db || supabaseAdmin; }
 const { awardLoyaltyPoints } = require('./loyalty.service');
 const { validateBatteryItems, createAssignments, isBatteryAccessory } = require('./battery.service');
 
-// ─── Sinh mã đơn PK2026XXXXX ──────────────────────────────────────────────────
-async function generateOrderCode() {
-  const year = new Date().getFullYear();
-  const prefix = `PK${year}`;
-  const { data: last } = await getDb(req).from('accessory_orders')
-    .select('order_code')
-    .like('order_code', `${prefix}%`)
-    .order('order_code', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextNum = 1;
-  if (last?.order_code) {
-    const num = parseInt(last.order_code.replace(prefix, ''), 10);
-    if (!isNaN(num)) nextNum = num + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+// ─── Sinh mã đơn — có prefix chi nhánh: CN01-PK202600001 ──────────────────────
+async function generateOrderCode(req) {
+  return generateCode(req, {
+    table: 'accessory_orders', column: 'order_code',
+    prefix: 'PK', padLength: 5, yearInPrefix: true,
+  });
 }
 
 // ─── Lấy userId helper ────────────────────────────────────────────────────────
@@ -141,7 +131,7 @@ const createAccessoryOrder = async (req, res) => {
       });
     }
 
-    const order_code = await generateOrderCode();
+    const order_code = await generateOrderCode(req);
 
     // Tạo đơn (status = pending — chưa giảm tồn kho cho đến khi paid)
     const { data: order, error: orderErr } = await getDb(req).from('accessory_orders')

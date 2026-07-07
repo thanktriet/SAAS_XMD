@@ -89,7 +89,7 @@ const getDashboard = async (req, res) => {
       // 5 đơn gần đây nhất
       getDb(req).from('sales_orders')
         .select(`
-          id, order_number, total_amount, status, order_date, deposit_amount,
+          id, order_number, total_amount, status, order_date, deposit_amount, customer_id,
           customers(full_name, phone)
         `)
         .order('created_at', { ascending: false })
@@ -267,7 +267,7 @@ async function getDailyReport(req, res) {
       const { data, error } = await getDb(req).from('sales_orders')
         .select(`
           id, order_number, total_amount, deposit_amount, status, payment_method,
-          order_date, created_at,
+          order_date, created_at, customer_id, salesperson_id,
           customers(full_name, phone),
           users!salesperson_id(full_name),
           sales_order_items(
